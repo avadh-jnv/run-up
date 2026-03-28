@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>3D Runner: Rupee Store Edition</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Arial Black', sans-serif; }
+        canvas { border: 8px solid #ff0; display: none; box-shadow: 0 0 50px #aa0; }
+        
+        /* Step 1 & 2 Overlays */
+        .overlay { text-align: center; color: white; background: rgba(10,10,10,0.98); padding: 50px; border: 4px solid #ff0; width: 800px; z-index: 100; box-shadow: 0 0 60px rgba(255,255,0,0.3); }
+        .grid { display: flex; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .card { cursor: pointer; border: 3px solid #444; padding: 15px; background: #222; transition: 0.3s; width: 220px; text-align: center;}
+        .card:hover { border-color: #ff0; transform: translateY(-5px); }
+        .card img { width: 100%; height: 150px; object-fit: contain; background: #333; margin-bottom: 10px; }
+        h1 { margin: 0; text-transform: uppercase; color: #ff0; text-shadow: 0 0 10px #ff0; }
+        p.char-desc { font-size: 12px; color: #aaa; margin: 5px 0 0;}
+
+        /* In-Game HUD & Store */
+        #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; display: none; z-index: 10; pointer-events: none; }
+        .rupee-text { color: #44ff44; text-shadow: 0 0 10px #00ff00; font-weight: bold;}
+        
+        #live-shop { position: absolute; top: 20px; right: 20px; display: none; z-index: 10; text-align: right; }
+        .btn-store { background: none; border: none; cursor: pointer; outline: none; transition: 0.2s; position: relative; }
+        .btn-store:disabled { opacity: 0.3; cursor: not-allowed; }
+        .btn-store img { width: 70px; height: 70px; filter: drop-shadow(0 0 15px #ff0); }
+        .btn-store:not(:disabled):hover img { transform: scale(1.15); filter: drop-shadow(0 0 25px #ff0); }
+        
+        /* The funny pulsing effect for the button when you have cash */
+        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        .can-afford { animation: pulse 1s infinite; }
+
+        .btn-hint { position: absolute; bottom: -20px; left: 0; width: 100%; text-align: center; color: #ff0; font-size: 12px; }
+    </style>
+</head>
+<body>
+
+    <div id="stats">
+        CRED: <span id="score-val">0</span><br>
+        WALLET: <span class="rupee-text">₹<span id="rupee-val">0</span></span><br>
+        <span id="power-timer" style="color:#0ff; font-size:18px;"></span>
+    </div>
+
+    <div id="live-shop">
+        <button id="store-btn" class="btn-store" onclick="buyBoxInGame()" disabled>
+            <img src="store_icon.png" alt="Buy Mystery Box" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3737/3737372.png'">
+            <div id="store-hint" class="btn-hint">LOCKED</div>
+        </button>
+    </div>
+
+    <div id="map-menu" class="overlay">
+        <h1> Step 1: DISTRICT SELECT </h1>
+        <div class="grid">
+            <div class="card" onclick="selectMap('yellowCity')"><div style="background: #555500; height: 100px;"></div><h3>YELLOW CITY</h3></div>
+            <div class="card" onclick="selectMap('neonNight')"><div style="background: #000044; height: 100px;"></div><h3>NEON NIGHT</h3></div>
+        </div>
+    </div>
+
+    <div id="char-menu" class="overlay" style="display:none;">
+        <h1> Step 2: CHOOSE RUNNER </h1>
+        <div class="grid">
+            <div class="card" onclick="selectChar('king')">
+                <img src="king_of_colour.png" onerror="this.src='https://via.placeholder.com/150x150/ffff00/000000?text=KING'">
+                <h3>KING OF COLOUR</h3><p class="char-desc">POWER: GHOST MODE</p>
+            </div>
+            <div class="card" onclick="selectChar('rookie')">
+                <img src="rookie.png" onerror="this.src='https://via.placeholder.com/150x150/cccccc/000000?text=ROOKIE'">
+                <h3>THE ROOKIE</h3><p class="char-desc">POWER: 4 SHIELDS</p>
+            </div>
+        </div>
+        <button onclick="startGame()" style="margin-top:30px; padding:15px 50px; background:#ff0; font-weight:bold; cursor:pointer; font-size:20px; border:none;">START RUN ➔</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const storeBtn = document.getElementById('store-btn');
+const storeHint = document.getElementById('store-hint');
+
+// Assets
+let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image();
+obsImg.src = 'obstacle.png'; boxImg.src = 'box.png'; 
+coinImg.src = 'https://cdn-icons-png.flaticon.com/512/217/217853.png'; 
+
+canvas.width = 1000; canvas.height = 750;
+const HORIZON_Y = 180;
+const LANES = [0.2, 0.5, 0.8];
+
+// State
+let totalRupees = parseInt(localStorage.getItem('rupees')) || 0;
+let score = 0, gameActive = false, speed = 0.009, playerType = 'king';
+let playerLane = 1, playerVisualX = 0.5, spawnTimer = 0;
+let obstacles = [], mysteryBoxes = [], coins = [];
+let isInvincible = false, invincibleTimer = 0, rookieShields = 0;
+let currentMap = { sky: '#222200', lines: '#ff0', glow: 'yellow' };
+
+// Selection Logic
+function selectMap(m) { 
+    if(m === 'neonNight') currentMap = { sky: '#000022', lines: '#0ff', glow: 'cyan' };
+    document.getElementById('map-menu').style.display='none'; 
+    document.getElementById('char-menu').style.display='block'; 
+}
+
+function selectChar(t) { 
+    playerType = t; 
+    playerImg.src = (t === 'king') ? 'king_of_colour.png' : 'rookie.png'; 
+}
+
+function startGame() {
+    document.getElementById('char-menu').style.display='none';
+    canvas.style.display='block'; 
+    document.getElementById('stats').style.display='block';
+    document.getElementById('live-shop').style.display='block';
+    gameActive = true; animate();
+}
+
+// THE NEW LIVE STORE LOGIC
+function buyBoxInGame() {
+    if(totalRupees >= 200 && gameActive) {
+        totalRupees -= 200;
+        localStorage.setItem('rupees', totalRupees);
+        mysteryBoxes.push({lane: playerLane, progress: 0.1});
+        // Visual feedback on the icon
+        storeHint.innerText = "BUYING...";
+        setTimeout(() => { updateStoreUIState(); }, 800);
+    }
+}
+
+function updateStoreUIState() {
+    if (!gameActive) return;
+    if (totalRupees >= 200) {
+        storeBtn.disabled = false;
+        storeBtn.classList.add('can-afford');
+        storeHint.innerText = "BUY [B]";
+    } else {
+        storeBtn.disabled = true;
+        storeBtn.classList.remove('can-afford');
+        storeHint.innerText = "₹200";
+    }
+}
+
+// Controls
+window.addEventListener('keydown', (e) => {
+    if (!gameActive) return;
+    if (e.key === 'ArrowLeft' && playerLane > 0) playerLane--;
+    if (e.key === 'ArrowRight' && playerLane < 2) playerLane++;
+    if (e.key.toLowerCase() === 'b') buyBoxInGame();
+});
+
+function update() {
+    score++;
+    if (!isInvincible) speed += 0.000003;
+    playerVisualX += (LANES[playerLane] - playerVisualX) * 0.15;
+
+    // Powerup Timers
+    if (isInvincible) {
+        invincibleTimer--;
+        if (invincibleTimer <= 0) { isInvincible = false; speed -= 0.006; }
+    }
+
+    // Spawning
+    spawnTimer++;
+    if (spawnTimer % 75 === 0) {
+        if (!isInvincible) { // GHOST MODE skips obstacles
+            let safe = Math.floor(Math.random()*3);
+            for(let i=0; i<3; i++) if(i!==safe && Math.random()>0.45) obstacles.push({lane: i, progress: 0});
+        }
+        if (Math.random() > 0.4) coins.push({lane: Math.floor(Math.random()*3), progress: 0});
+        if (Math.random() > 0.96) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
+    }
+
+    // Processing items
+    [ {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, {list: coins, id: 2} ].forEach(group => {
+        for (let i = group.list.length - 1; i >= 0; i--) {
+            let item = group.list[i];
+            item.progress += speed;
+
+            // Collision Detection
+            if (item.progress > 0.88 && item.progress < 0.98 && item.lane === playerLane) {
+                if (group.id === 0) { // Obstacle hit
+                    if (rookieShields > 0) { rookieShields--; group.list.splice(i, 1); }
+                    else if (!isInvincible) { 
+                        gameActive = false; 
+                        localStorage.setItem('rupees', totalRupees);
+                        alert("GAME OVER! RUPEES: ₹" + totalRupees);
+                        location.reload(); 
+                    }
+                } else if (group.id === 1) { // Box hit
+                    if (playerType === 'king') { isInvincible = true; invincibleTimer = 450; speed += 0.006; }
+                    else rookieShields = 4;
+                    group.list.splice(i, 1);
+                } else { // Coin hit
+                    totalRupees += 1;
+                    localStorage.setItem('rupees', totalRupees);
+                    group.list.splice(i, 1);
+                }
+            }
+            if (item.progress > 1.2) group.list.splice(i, 1);
+        }
+    });
+
+    // Update UI Elements
+    document.getElementById('rupee-val').innerText = totalRupees;
+    document.getElementById('score-val').innerText = Math.floor(score/10);
+    document.getElementById('power-timer').innerText = isInvincible ? "👑 KING GHOST: ACTIVE" : (rookieShields > 0 ? "🛡️ SHIELDS: " + rookieShields : "");
+    updateStoreUIState(); // LIVE SHOP UPDATE
+}
+
+function draw() {
+    ctx.fillStyle = currentMap.sky; ctx.fillRect(0,0,1000,750);
+    
+    // Road (Fixed wide view for 3 lanes)
+    ctx.fillStyle = '#111'; ctx.beginPath();
+    ctx.moveTo(420, HORIZON_Y); ctx.lineTo(580, HORIZON_Y); 
+    ctx.lineTo(1300, 750); ctx.lineTo(-300, 750); ctx.fill();
+
+    // Lanes (Yellow Powder)
+    ctx.setLineDash([20,30]); ctx.strokeStyle = currentMap.lines; ctx.lineWidth = 10;
+    ctx.shadowBlur = 15; ctx.shadowColor = currentMap.glow;
+    [0.0, 0.33, 0.66, 1.0].forEach(l => {
+        ctx.beginPath(); 
+        ctx.moveTo(500 + (l-0.5)*160, HORIZON_Y);
+        ctx.lineTo(500 + (l-0.5)*1600, 750); 
+        ctx.stroke();
+    });
+    ctx.setLineDash([]); ctx.shadowBlur = 0;
+
+    // Items
+    coins.forEach(c => {
+        let s = 60 * c.progress;
+        let x = 500 + (LANES[c.lane]-0.5) * (160 + c.progress * 1440);
+        let y = HORIZON_Y + c.progress * 570;
+        ctx.drawImage(coinImg, x-s/2, y-s, s, s);
+    });
+    mysteryBoxes.forEach(b => {
+        let s = 140 * b.progress;
+        let x = 500 + (LANES[b.lane]-0.5) * (160 + b.progress * 1440);
+        let y = HORIZON_Y + b.progress * 570;
+        ctx.drawImage(boxImg, x-s/2, y-s, s, s);
+    });
+    obstacles.forEach(o => {
+        let s = 250 * o.progress;
+        let x = 500 + (LANES[o.lane]-0.5) * (160 + o.progress * 1600);
+        let y = HORIZON_Y + o.progress * 570;
+        ctx.drawImage(obsImg, x-s/2, y-s, s, s);
+    });
+
+    // Player (PERFECT ALIGNMENT)
+    let pSize = 240;
+    let pX = 500 + (playerVisualX - 0.5) * 1100;
+    let pY = 700;
+
+    if (isInvincible) { ctx.shadowBlur = 40; ctx.shadowColor = "yellow"; }
+    
+    // Shield bubble visual
+    if (rookieShields > 0) { 
+        ctx.strokeStyle = "#0ff"; ctx.lineWidth = 5; 
+        ctx.beginPath(); ctx.arc(pX, pY - (pSize/2), 120, 0, Math.PI*2); ctx.stroke(); 
+    }
+    
+    ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize);
+    ctx.shadowBlur = 0;
+}
+
+function animate() { if(gameActive) { update(); draw(); requestAnimationFrame(animate); } }
+</script>
+</body>
+</html>
