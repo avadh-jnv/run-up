@@ -2,55 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Runner: Esports Edition</title>
+    <title>3D Runner: Professional Edition</title>
     <style>
-        /* Global Esports Vibe */
         body { margin: 0; background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%); overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Arial Black', sans-serif; }
         canvas { border: 4px solid #ff9900; display: none; box-shadow: 0 0 40px rgba(255, 153, 0, 0.4); background: #000; border-radius: 8px; }
         
-        /* Premium Glassmorphism Setup Overlay */
         .overlay { text-align: center; color: white; background: rgba(15, 15, 25, 0.85); backdrop-filter: blur(10px); padding: 30px; border: 2px solid rgba(255, 255, 255, 0.1); width: 95vw; max-width: 1100px; max-height: 90vh; overflow-y: auto; z-index: 100; box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 153, 0, 0.1); border-radius: 16px; }
         
-        /* Grid and Cards Redesign */
         .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 15px; margin-top: 15px; }
-        .card { cursor: pointer; border: 2px solid transparent; padding: 10px; background: linear-gradient(145deg, #222, #111); transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1); text-align: center; border-radius: 10px; position: relative; overflow: hidden; }
+        .card { cursor: pointer; border: 2px solid transparent; padding: 10px; background: linear-gradient(145deg, #222, #111); transition: all 0.3s; text-align: center; border-radius: 10px; position: relative; overflow: hidden; }
         .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.5); border-color: #ff9900; }
         .card img, .card .color-box { width: 100%; height: 75px; object-fit: contain; background: rgba(0,0,0,0.5); margin-bottom: 8px; border-radius: 6px; }
         
-        /* Typography */
-        h1 { margin: 0 0 10px 0; color: #fff; text-shadow: 0 0 15px #ff9900, 0 0 30px #ff3300; font-size: 32px; text-transform: uppercase; letter-spacing: 2px; }
-        h2 { margin: 25px 0 10px 0; color: #ffcc00; font-size: 18px; text-transform: uppercase; border-bottom: 2px solid rgba(255, 204, 0, 0.3); padding-bottom: 5px; display: inline-block; }
-        h3 { margin: 0; font-size: 12px; color: #eee; letter-spacing: 0.5px; }
+        h1 { margin: 0 0 10px 0; color: #fff; text-shadow: 0 0 15px #ff9900, 0 0 30px #ff3300; font-size: 32px; letter-spacing: 2px; }
+        h2 { margin: 25px 0 10px 0; color: #ffcc00; font-size: 18px; border-bottom: 2px solid rgba(255, 204, 0, 0.3); padding-bottom: 5px; display: inline-block; }
+        h3 { margin: 0; font-size: 12px; color: #eee; }
         p.char-desc { font-size: 10px; color: #aaa; margin: 5px 0 0; line-height: 1.3; }
         
-        /* The BOOYAH Selection State */
         .selected { border-color: #ff3300; background: linear-gradient(145deg, #4a1500, #220500); box-shadow: 0 0 20px rgba(255, 51, 0, 0.5); transform: scale(1.05); }
         .selected::before { content: '✓'; position: absolute; top: 5px; right: 5px; background: #ff3300; color: white; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; }
 
-        /* Free Fire Themed Launch Button */
-        .launch-btn { margin-top: 35px; padding: 18px 60px; background: linear-gradient(90deg, #ff8c00, #ff3300); color: #fff; font-weight: bold; cursor: pointer; font-size: 24px; border: none; border-radius: 8px; box-shadow: 0 5px 25px rgba(255, 51, 0, 0.6); text-transform: uppercase; letter-spacing: 2px; transition: 0.3s; position: relative; overflow: hidden; }
-        .launch-btn:hover { background: linear-gradient(90deg, #ffa633, #ff4d1a); box-shadow: 0 8px 35px rgba(255, 51, 0, 0.8); transform: scale(1.03); }
-        .launch-btn::after { content: 'BOOYAH!'; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: rgba(255,255,255,0.2); transition: 0.4s; display: flex; align-items: center; justify-content: center; }
-        .launch-btn:hover::after { left: 0; }
+        .launch-btn { margin-top: 35px; padding: 18px 60px; background: linear-gradient(90deg, #ff8c00, #ff3300); color: #fff; font-weight: bold; cursor: pointer; font-size: 24px; border: none; border-radius: 8px; box-shadow: 0 5px 25px rgba(255, 51, 0, 0.6); transition: 0.3s; }
+        .launch-btn:hover { background: linear-gradient(90deg, #ffa633, #ff4d1a); transform: scale(1.03); }
 
-        /* In-Game HUD */
-        #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 22px; display: none; z-index: 10; pointer-events: none; line-height: 1.5; text-shadow: 2px 2px 4px #000, 0 0 10px rgba(0,0,0,0.8); background: rgba(0,0,0,0.4); padding: 15px; border-radius: 10px; border-left: 4px solid #ff9900; }
-        .rupee-text { color: #ffcc00; text-shadow: 0 0 10px #ff9900; }
-        .hp-text { color: #ff3300; text-shadow: 0 0 10px #ff0000; letter-spacing: 2px; }
+        #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 22px; display: none; z-index: 10; line-height: 1.5; text-shadow: 2px 2px 4px #000; background: rgba(0,0,0,0.6); padding: 15px; border-radius: 10px; border-left: 4px solid #ff9900; }
+        .rupee-text { color: #ffcc00; } .hp-text { color: #ff3300; }
+        #creator-tag { position: absolute; bottom: 15px; right: 20px; color: rgba(255,255,255,0.4); font-size: 14px; z-index: 10; display: none; }
         
-        #creator-tag { position: absolute; bottom: 15px; right: 20px; color: rgba(255,255,255,0.4); font-size: 14px; z-index: 10; display: none; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; letter-spacing: 1px; }
-        
-        #live-shop { position: absolute; top: 20px; right: 20px; display: none; z-index: 10; background: rgba(0,0,0,0.4); padding: 10px; border-radius: 10px; border-right: 4px solid #00ffcc; text-align: center; }
-        .btn-store { background: none; border: none; cursor: pointer; transition: 0.2s; position: relative; }
+        #live-shop { position: absolute; top: 20px; right: 20px; display: none; z-index: 10; background: rgba(0,0,0,0.6); padding: 10px; border-radius: 10px; border-right: 4px solid #00ffcc; text-align: center; }
+        .btn-store { background: none; border: none; cursor: pointer; transition: 0.2s; }
         .btn-store:disabled { opacity: 0.3; }
         .btn-store img { width: 65px; height: 65px; filter: drop-shadow(0 0 15px #00ffcc); }
-        .btn-store:not(:disabled):hover img { transform: scale(1.1); filter: drop-shadow(0 0 25px #00ffcc); }
-        .btn-hint { color: #00ffcc; font-size: 14px; margin-top: 5px; font-weight: bold; text-shadow: 0 0 5px #00ffcc; }
+        .btn-hint { color: #00ffcc; font-size: 14px; margin-top: 5px; font-weight: bold; }
         
-        /* Custom Scrollbar for Lobby */
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: #111; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb { background: #ff9900; border-radius: 4px; }
+        ::-webkit-scrollbar { width: 8px; } ::-webkit-scrollbar-track { background: #111; } ::-webkit-scrollbar-thumb { background: #ff9900; border-radius: 4px; }
     </style>
 </head>
 <body>
@@ -71,19 +56,12 @@
     </div>
 
     <div id="setup-menu" class="overlay">
-        <h1>BATTLE LOBBY</h1>
-        
+        <h1>PRO BATTLE LOBBY</h1>
         <h2>Select Drop Zone (11 Maps)</h2>
-        <div class="grid" id="map-grid">
-            <!-- Maps Injected via JS -->
-        </div>
-
+        <div class="grid" id="map-grid"></div>
         <h2>Select Operator (10 Characters)</h2>
-        <div class="grid" id="char-grid">
-            <!-- Characters Injected via JS -->
-        </div>
-
-        <button class="launch-btn" onclick="startGame()">START RUN</button>
+        <div class="grid" id="char-grid"></div>
+        <button class="launch-btn" onclick="startGame()">START RUN ➔</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -95,22 +73,21 @@ canvas.width = 1000; canvas.height = 750;
 const HORIZON_Y = 180;
 const LANES = [0.2, 0.5, 0.8];
 
-// Map Data - Added Free Fire Bermuda!
+// Advanced Map Data with Scenery Types
 const maps = [
-    { id: 'freeFire', name: 'FF: Bermuda Drop', sky: '#1a2e1a', lines: '#ff5500', glow: '#ff0000' }, // New FF Map
-    { id: 'yellowCity', name: 'Yellow City', sky: '#222200', lines: '#ff0', glow: 'yellow' },
-    { id: 'neonNight', name: 'Neon Night', sky: '#000022', lines: '#0ff', glow: 'cyan' },
-    { id: 'tokyoPulse', name: 'Tokyo Pulse', sky: '#200020', lines: '#f0f', glow: '#f0f' },
-    { id: 'emeraldCore', name: 'Emerald Core', sky: '#001500', lines: '#0f0', glow: '#0f0' },
-    { id: 'disasterZone', name: 'Disaster Zone', sky: '#2a0800', lines: '#ff4400', glow: '#ff2200' },
-    { id: 'cosmic', name: 'Cosmic Sky', sky: '#000511', lines: '#ffd700', glow: '#ffaa00' },
-    { id: 'vaporwave', name: 'Vaporwave', sky: '#1a0b2e', lines: '#00ffff', glow: '#ff00ff' },
-    { id: 'glitch', name: 'Glitch Matrix', sky: '#111', lines: '#fff', glow: '#aaa' },
-    { id: 'abyss', name: 'Abyssal Depths', sky: '#001122', lines: '#0044ff', glow: '#0088ff' },
-    { id: 'celestial', name: 'Celestial Rift', sky: '#ffffff', lines: '#000000', glow: '#555' }
+    { id: 'freeFire', name: 'FF: Bermuda Drop', sky: '#1a2e1a', lines: '#ff5500', glow: '#ff0000', floor: '#0d1a0d', stype: 1, sColor1: '#3a2b1c', sColor2: '#1c2e0e' }, 
+    { id: 'yellowCity', name: 'Yellow City', sky: '#222200', lines: '#ff0', glow: 'yellow', floor: '#111100', stype: 1, sColor1: '#cca500', sColor2: '#222' },
+    { id: 'neonNight', name: 'Neon Night', sky: '#000022', lines: '#0ff', glow: 'cyan', floor: '#000011', stype: 1, sColor1: '#00ffff', sColor2: '#ff00ff' },
+    { id: 'tokyoPulse', name: 'Tokyo Pulse', sky: '#200020', lines: '#f0f', glow: '#f0f', floor: '#100010', stype: 3, sColor1: '#ff0055', sColor2: '#222' },
+    { id: 'emeraldCore', name: 'Emerald Core', sky: '#001500', lines: '#0f0', glow: '#0f0', floor: '#000a00', stype: 2, sColor1: '#00ff00', sColor2: '#003300' },
+    { id: 'disasterZone', name: 'Disaster Zone', sky: '#2a0800', lines: '#ff4400', glow: '#ff2200', floor: '#150400', stype: 2, sColor1: '#ff4400', sColor2: '#444' },
+    { id: 'cosmic', name: 'Cosmic Sky', sky: '#000511', lines: '#ffd700', glow: '#ffaa00', floor: '#000208', stype: 4, sColor1: '#ffd700', sColor2: '#b8860b' }, // Scenery 4: Astro Instruments!
+    { id: 'vaporwave', name: 'Vaporwave', sky: '#1a0b2e', lines: '#00ffff', glow: '#ff00ff', floor: '#0d0517', stype: 2, sColor1: '#00ffff', sColor2: '#ff00ff' },
+    { id: 'glitch', name: 'Glitch Matrix', sky: '#111', lines: '#fff', glow: '#aaa', floor: '#000', stype: 1, sColor1: '#ffffff', sColor2: '#555555' },
+    { id: 'abyss', name: 'Abyssal Depths', sky: '#001122', lines: '#0044ff', glow: '#0088ff', floor: '#000811', stype: 2, sColor1: '#0044ff', sColor2: '#001133' },
+    { id: 'celestial', name: 'Celestial Rift', sky: '#ffffff', lines: '#000000', glow: '#555', floor: '#eef', stype: 3, sColor1: '#ffffff', sColor2: '#ffd700' }
 ];
 
-// Character Data
 const characters = [
     { id: 'king', name: 'King of Colour', img: 'king_of_colour.png', desc: '🎨 Paint Cans: Full Heal, +₹100, Invincible.' },
     { id: 'rookie', name: 'The Rookie', img: 'https://cdn-icons-png.flaticon.com/512/616/616430.png', desc: '🛡️ Shield: 4 Hits blocked.' },
@@ -124,11 +101,10 @@ const characters = [
     { id: 'wraith', name: 'Phantom Wraith', img: 'https://cdn-icons-png.flaticon.com/512/1233/1233282.png', desc: '👻 One free auto-revive on death.' }
 ];
 
-// Populate UI Elements
 const mapGrid = document.getElementById('map-grid');
 maps.forEach((m, i) => {
     mapGrid.innerHTML += `<div id="map-${m.id}" class="card ${i===0?'selected':''}" onclick="selectMap('${m.id}')">
-        <div class="color-box" style="background:${m.sky}; border-bottom: 5px solid ${m.lines}; box-shadow: inset 0 -10px 20px ${m.glow}55;"></div><h3>${m.name}</h3></div>`;
+        <div class="color-box" style="background:${m.sky}; border-bottom: 5px solid ${m.lines};"></div><h3>${m.name}</h3></div>`;
 });
 const charGrid = document.getElementById('char-grid');
 characters.forEach((c, i) => {
@@ -136,7 +112,6 @@ characters.forEach((c, i) => {
         <img src="${c.img}"><h3>${c.name}</h3><p class="char-desc">${c.desc}</p></div>`;
 });
 
-// Assets & States
 let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image(), heartImg = new Image(), killImg = new Image(), paintImg = new Image();
 obsImg.src = 'https://cdn-icons-png.flaticon.com/512/4601/4601679.png'; 
 boxImg.src = 'https://cdn-icons-png.flaticon.com/512/2622/2622104.png'; 
@@ -147,13 +122,12 @@ paintImg.src = 'https://cdn-icons-png.flaticon.com/512/2970/2970785.png';
 
 let totalRupees = parseInt(localStorage.getItem('rupees')) || 0;
 let score = 0, gameActive = false, baseSpeed = 0.009, currentSpeed = 0.009;
-let playerType = 'freeFire', currentMap = maps[0]; // Default to FF map
+let playerType = 'freeFire', currentMap = maps[0]; 
 let playerLane = 1, playerVisualX = 0.5, spawnTimer = 0;
-let obstacles = [], mysteryBoxes = [], coins = [], hearts = [], paintCans = [];
+let obstacles = [], mysteryBoxes = [], coins = [], hearts = [], paintCans = [], sideScenery = []; // Added Side Scenery
 let health = 3;
-let flashEffect = 0, paintFlash = 0, isInvincible = false, invincibleTimer = 0, rookieShields = 0, paintActive = false, paintTimer = 0; 
-let giantMode = false, giantTimer = 0;
-let hasRevived = false;
+let flashEffect = 0, paintFlash = 0, isInvincible = false, invincibleTimer = 0, rookieShields = 0, paintActive = false, paintTimer = 0, giantMode = false, giantTimer = 0, hasRevived = false;
+let trackOffset = 0; // For moving track floor lines
 
 playerImg.src = characters[0].img;
 
@@ -163,8 +137,7 @@ function selectMap(id) {
     document.getElementById('map-'+id).classList.add('selected');
 }
 function selectChar(id) { 
-    playerType = id; 
-    playerImg.src = characters.find(c => c.id === id).img;
+    playerType = id; playerImg.src = characters.find(c => c.id === id).img;
     characters.forEach(c => document.getElementById('char-'+c.id).classList.remove('selected'));
     document.getElementById('char-'+id).classList.add('selected');
 }
@@ -175,19 +148,13 @@ function startGame() {
     document.getElementById('stats').style.display='block';
     document.getElementById('live-shop').style.display='block';
     document.getElementById('creator-tag').style.display='block';
-    
-    baseSpeed = (playerType === 'chrono') ? 0.006 : 0.009;
-    hasRevived = false;
-    currentSpeed = baseSpeed;
-    gameActive = true; 
-    animate();
+    baseSpeed = (playerType === 'chrono') ? 0.006 : 0.009; hasRevived = false; currentSpeed = baseSpeed; gameActive = true; animate();
 }
 
 function buyBoxInGame() {
     if(totalRupees >= 200 && gameActive) {
         totalRupees -= 200; localStorage.setItem('rupees', totalRupees);
-        triggerMysteryBoxReward();
-        setTimeout(() => updateStoreUIState(), 800);
+        triggerMysteryBoxReward(); setTimeout(() => updateStoreUIState(), 800);
     }
 }
 
@@ -209,33 +176,20 @@ function updateStoreUIState() {
 let lastTap = 0;
 window.addEventListener('keydown', (e) => {
     if (!gameActive) return;
-    if (e.key === 'ArrowLeft' && playerLane > 0) {
-        playerLane--;
-        if(playerType === 'ninja' && Date.now() - lastTap < 300) { isInvincible = true; invincibleTimer = 30; } 
-        lastTap = Date.now();
-    }
-    if (e.key === 'ArrowRight' && playerLane < 2) {
-        playerLane++;
-        if(playerType === 'ninja' && Date.now() - lastTap < 300) { isInvincible = true; invincibleTimer = 30; } 
-        lastTap = Date.now();
-    }
+    if (e.key === 'ArrowLeft' && playerLane > 0) { playerLane--; if(playerType === 'ninja' && Date.now() - lastTap < 300) { isInvincible = true; invincibleTimer = 30; } lastTap = Date.now(); }
+    if (e.key === 'ArrowRight' && playerLane < 2) { playerLane++; if(playerType === 'ninja' && Date.now() - lastTap < 300) { isInvincible = true; invincibleTimer = 30; } lastTap = Date.now(); }
     if (e.key.toLowerCase() === 'b') buyBoxInGame();
 });
 
 function triggerGameOver(msg) {
-    if(playerType === 'wraith' && !hasRevived) {
-        hasRevived = true;
-        health = 3; obstacles = []; isInvincible = true; invincibleTimer = 150;
-        alert("👻 PHANTOM REVIVAL ACTIVATED! BACK IN THE FIGHT!");
-        return;
-    }
+    if(playerType === 'wraith' && !hasRevived) { hasRevived = true; health = 3; obstacles = []; isInvincible = true; invincibleTimer = 150; alert("👻 PHANTOM REVIVAL ACTIVATED!"); return; }
     gameActive = false; localStorage.setItem('rupees', totalRupees);
-    alert("❌ ELIMINATED!\n" + msg + "\n\nSCORE: " + Math.floor(score) + "\nTOTAL LOOT: ₹" + totalRupees);
-    location.reload(); 
+    alert("❌ ELIMINATED!\n" + msg + "\n\nSCORE: " + Math.floor(score) + "\nTOTAL LOOT: ₹" + totalRupees); location.reload(); 
 }
 
 function update() {
     score += (playerType === 'astro') ? 2 : 1; 
+    trackOffset += currentSpeed; if(trackOffset > 1) trackOffset -= 1; // Moving track logic
     
     if (!isInvincible && !paintActive && !giantMode) { baseSpeed += 0.000002; currentSpeed = baseSpeed; }
     playerVisualX += (LANES[playerLane] - playerVisualX) * 0.15;
@@ -243,23 +197,31 @@ function update() {
     if (isInvincible) { invincibleTimer--; if (invincibleTimer <= 0) { isInvincible = false; currentSpeed = baseSpeed; } }
     if (giantMode) { giantTimer--; if (giantTimer <= 0) { giantMode = false; currentSpeed = baseSpeed; } }
     if (paintActive) { paintTimer--; currentSpeed = baseSpeed * 1.25; if (paintTimer <= 0) { paintActive = false; currentSpeed = baseSpeed; } }
-    
-    if (flashEffect > 0) flashEffect--;
-    if (paintFlash > 0) paintFlash--;
+    if (flashEffect > 0) flashEffect--; if (paintFlash > 0) paintFlash--;
 
     spawnTimer++;
     if (spawnTimer % 70 === 0) {
         let emptyLane = Math.floor(Math.random() * 3);
-        if (!isInvincible && !paintActive && !giantMode) { 
-            for(let i=0; i<3; i++) { if(i !== emptyLane && Math.random() > 0.45) obstacles.push({lane: i, progress: 0, instantKill: Math.random() < 0.12}); }
-        }
+        if (!isInvincible && !paintActive && !giantMode) { for(let i=0; i<3; i++) { if(i !== emptyLane && Math.random() > 0.45) obstacles.push({lane: i, progress: 0, instantKill: Math.random() < 0.12}); } }
         if (Math.random() > 0.4) coins.push({lane: Math.floor(Math.random()*3), progress: 0});
         if (Math.random() > 0.94) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
         if (Math.random() > 0.96 && health < 3) hearts.push({lane: Math.floor(Math.random()*3), progress: 0});
         if (playerType === 'king' && Math.random() > 0.82) paintCans.push({lane: Math.floor(Math.random()*3), progress: 0});
     }
 
+    // Spawn Scenery on Left and Right
+    if (spawnTimer % 20 === 0) {
+        sideScenery.push({ side: -1, progress: 0, variant: Math.random() });
+        sideScenery.push({ side: 1, progress: 0, variant: Math.random() });
+    }
+
     if (playerType === 'magnet') { coins.forEach(c => { if (c.progress > 0.35) c.lane = playerLane; }); }
+
+    // Update Scenery
+    for (let i = sideScenery.length - 1; i >= 0; i--) {
+        sideScenery[i].progress += currentSpeed * 1.2; // Move slightly faster than track for parallax
+        if (sideScenery[i].progress > 1.5) sideScenery.splice(i, 1);
+    }
 
     [ {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, {list: coins, id: 2}, {list: hearts, id: 3}, {list: paintCans, id: 4} ].forEach(group => {
         for (let i = group.list.length - 1; i >= 0; i--) {
@@ -295,20 +257,77 @@ function update() {
     updateStoreUIState(); 
 }
 
-function draw() {
-    ctx.fillStyle = currentMap.sky; ctx.fillRect(0,0,1000,750);
+function drawSceneryItem(scene) {
+    let p = scene.progress;
+    let s = 30 + p * 600; // Size scaling
+    // Pushing outward as it gets closer
+    let x = 500 + (scene.side * (140 + p * 1200)); 
+    let y = HORIZON_Y + p * 570;
     
-    // Grid ground - dark base
-    ctx.fillStyle = '#0a0a0a'; ctx.beginPath(); ctx.moveTo(420, HORIZON_Y); ctx.lineTo(580, HORIZON_Y); ctx.lineTo(1300, 750); ctx.lineTo(-300, 750); ctx.fill();
+    ctx.fillStyle = (scene.variant > 0.5) ? currentMap.sColor1 : currentMap.sColor2;
+    ctx.shadowBlur = 10; ctx.shadowColor = currentMap.glow;
 
-    // Map Specific Line rendering
-    ctx.setLineDash(currentMap.id === 'glitch' ? [5,10,30,5] : [20,30]); 
-    ctx.strokeStyle = currentMap.lines; ctx.lineWidth = currentMap.id === 'freeFire' ? 12 : 10; 
-    ctx.shadowBlur = currentMap.id === 'freeFire' ? 25 : 15; ctx.shadowColor = currentMap.glow;
-    
+    if (currentMap.stype === 1) { // Boxy / City / FF Crates
+        ctx.fillRect(x - s/2, y - s*1.5, s, s*1.5);
+        ctx.strokeStyle = currentMap.lines; ctx.lineWidth = 2;
+        ctx.strokeRect(x - s/2, y - s*1.5, s, s*1.5);
+    } 
+    else if (currentMap.stype === 2) { // Triangular / Trees / Pyramids
+        ctx.beginPath();
+        ctx.moveTo(x, y - s*2); ctx.lineTo(x - s/1.5, y); ctx.lineTo(x + s/1.5, y);
+        ctx.fill(); ctx.strokeStyle = currentMap.lines; ctx.stroke();
+    }
+    else if (currentMap.stype === 3) { // Pillars with rings/signs
+        ctx.fillRect(x - s/6, y - s*2, s/3, s*2);
+        ctx.fillStyle = currentMap.sColor1;
+        ctx.beginPath(); ctx.arc(x, y - s*1.8, s/2, 0, Math.PI*2); ctx.fill();
+    }
+    else if (currentMap.stype === 4) { // Astro Instruments (Shanku / Sundials)
+        // Draw Sundial Arc
+        ctx.strokeStyle = currentMap.sColor1; ctx.lineWidth = s/10;
+        ctx.beginPath(); ctx.arc(x, y, s, Math.PI, Math.PI*2); ctx.stroke();
+        // Draw Gnomon (Shanku) in center
+        ctx.fillStyle = currentMap.sColor2;
+        ctx.beginPath(); ctx.moveTo(x, y - s*1.2); ctx.lineTo(x - s/4, y); ctx.lineTo(x + s/4, y); ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+}
+
+function draw() {
+    // 1. Sky & Horizon
+    ctx.fillStyle = currentMap.sky; ctx.fillRect(0,0,1000,750);
+    // Glowing Horizon Sun/Core
+    ctx.fillStyle = currentMap.glow; ctx.shadowBlur = 50; ctx.shadowColor = currentMap.glow;
+    ctx.beginPath(); ctx.arc(500, HORIZON_Y, 80, 0, Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+
+    // 2. Base Ground
+    ctx.fillStyle = currentMap.floor; 
+    ctx.beginPath(); ctx.moveTo(420, HORIZON_Y); ctx.lineTo(580, HORIZON_Y); ctx.lineTo(1500, 750); ctx.lineTo(-500, 750); ctx.fill();
+
+    // 3. Moving Floor Grid (Speed Lines)
+    ctx.strokeStyle = currentMap.lines;
+    for(let i=0; i<15; i++) {
+        let p = (trackOffset + i/15) % 1;
+        let y = HORIZON_Y + p * 570;
+        let w = 160 + p * 1440; // width at this progress
+        ctx.lineWidth = 1 + p * 6;
+        ctx.globalAlpha = p; // Fade in at horizon
+        ctx.beginPath(); ctx.moveTo(500 - w/2, y); ctx.lineTo(500 + w/2, y); ctx.stroke();
+    }
+    ctx.globalAlpha = 1.0;
+
+    // 4. Side Scenery (Draw back to front)
+    sideScenery.sort((a,b) => a.progress - b.progress);
+    sideScenery.forEach(scene => drawSceneryItem(scene));
+
+    // 5. Track Vertical Lines
+    ctx.setLineDash(currentMap.id === 'glitch' ? [5,10,30,5] : []); 
+    ctx.strokeStyle = currentMap.lines; ctx.lineWidth = currentMap.id === 'freeFire' ? 12 : 8; 
+    ctx.shadowBlur = 15; ctx.shadowColor = currentMap.glow;
     [0.0, 0.33, 0.66, 1.0].forEach(l => { ctx.beginPath(); ctx.moveTo(500 + (l-0.5)*160, HORIZON_Y); ctx.lineTo(500 + (l-0.5)*1600, 750); ctx.stroke(); });
     ctx.setLineDash([]); ctx.shadowBlur = 0;
 
+    // 6. Draw Items
     let drawItem = (img, lane, prog, sizeBase) => {
         let s = sizeBase * prog; 
         ctx.drawImage(img, (500 + (LANES[lane]-0.5) * (160 + prog * 1440))-s/2, (HORIZON_Y + prog * 570)-s, s, s);
@@ -324,6 +343,7 @@ function draw() {
         else { drawItem(obsImg, o.lane, o.progress, 250); }
     });
 
+    // 7. Player Character
     let pSize = giantMode ? 380 : 230; 
     let pX = 500 + (playerVisualX - 0.5) * 1100; let pY = 705;
     
@@ -333,6 +353,7 @@ function draw() {
     
     ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize); ctx.shadowBlur = 0;
 
+    // Screen Effects
     if (flashEffect > 0) { ctx.fillStyle = `rgba(255, 0, 0, ${flashEffect / 14})`; ctx.fillRect(0, 0, 1000, 750); }
     if (paintFlash > 0) { ctx.fillStyle = `rgba(255, 200, 0, ${paintFlash / 18})`; ctx.fillRect(0, 0, 1000, 750); }
 }
