@@ -15,10 +15,12 @@
         .card img { width: 100%; height: 150px; object-fit: contain; background: #333; margin-bottom: 10px; }
         h1 { margin: 0; text-transform: uppercase; color: #ff0; text-shadow: 0 0 10px #ff0; }
         p.char-desc { font-size: 12px; color: #aaa; margin: 5px 0 0;}
+        .selected { border-color: #ff0; background: #333; }
 
         /* In-Game HUD & Store */
-        #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; display: none; z-index: 10; pointer-events: none; }
+        #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; display: none; z-index: 10; pointer-events: none; line-height: 1.4; }
         .rupee-text { color: #44ff44; text-shadow: 0 0 10px #00ff00; font-weight: bold;}
+        .hp-text { color: #ff4444; text-shadow: 0 0 10px #ff0000; font-weight: bold; }
         
         #live-shop { position: absolute; top: 20px; right: 20px; display: none; z-index: 10; text-align: right; }
         .btn-store { background: none; border: none; cursor: pointer; outline: none; transition: 0.2s; position: relative; }
@@ -26,16 +28,15 @@
         .btn-store img { width: 70px; height: 70px; filter: drop-shadow(0 0 15px #ff0); }
         .btn-store:not(:disabled):hover img { transform: scale(1.15); filter: drop-shadow(0 0 25px #ff0); }
         
-        /* The funny pulsing effect for the button when you have cash */
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
         .can-afford { animation: pulse 1s infinite; }
-
         .btn-hint { position: absolute; bottom: -20px; left: 0; width: 100%; text-align: center; color: #ff0; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div id="stats">
+        HP: <span class="hp-text" id="hp-val">❤️❤️❤️</span><br>
         CRED: <span id="score-val">0</span><br>
         WALLET: <span class="rupee-text">₹<span id="rupee-val">0</span></span><br>
         <span id="power-timer" style="color:#0ff; font-size:18px;"></span>
@@ -59,11 +60,11 @@
     <div id="char-menu" class="overlay" style="display:none;">
         <h1> Step 2: CHOOSE RUNNER </h1>
         <div class="grid">
-            <div class="card" onclick="selectChar('king')">
+            <div id="card-king" class="card" onclick="selectChar('king')">
                 <img src="king_of_colour.png" onerror="this.src='https://via.placeholder.com/150x150/ffff00/000000?text=KING'">
                 <h3>KING OF COLOUR</h3><p class="char-desc">POWER: GHOST MODE</p>
             </div>
-            <div class="card" onclick="selectChar('rookie')">
+            <div id="card-rookie" class="card" onclick="selectChar('rookie')">
                 <img src="rookie.png" onerror="this.src='https://via.placeholder.com/150x150/cccccc/000000?text=ROOKIE'">
                 <h3>THE ROOKIE</h3><p class="char-desc">POWER: 4 SHIELDS</p>
             </div>
@@ -80,9 +81,11 @@ const storeBtn = document.getElementById('store-btn');
 const storeHint = document.getElementById('store-hint');
 
 // Assets
-let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image();
-obsImg.src = 'obstacle.png'; boxImg.src = 'box.png'; 
+let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image(), heartImg = new Image();
+obsImg.src = 'obstacle.png'; 
+boxImg.src = 'box.png'; 
 coinImg.src = 'https://cdn-icons-png.flaticon.com/512/217/217853.png'; 
+heartImg.src = 'https://cdn-icons-png.flaticon.com/512/833/833472.png';
 
 canvas.width = 1000; canvas.height = 750;
 const HORIZON_Y = 180;
@@ -92,20 +95,27 @@ const LANES = [0.2, 0.5, 0.8];
 let totalRupees = parseInt(localStorage.getItem('rupees')) || 0;
 let score = 0, gameActive = false, speed = 0.009, playerType = 'king';
 let playerLane = 1, playerVisualX = 0.5, spawnTimer = 0;
-let obstacles = [], mysteryBoxes = [], coins = [];
+let obstacles = [], mysteryBoxes = [], coins = [], hearts = [];
 let isInvincible = false, invincibleTimer = 0, rookieShields = 0;
+let health = 3; // Start with 3 Hit Points
+let flashEffect = 0; // Screen flash counter when hit
 let currentMap = { sky: '#222200', lines: '#ff0', glow: 'yellow' };
 
-// Selection Logic
+playerImg.src = 'king_of_colour.png';
+
 function selectMap(m) { 
     if(m === 'neonNight') currentMap = { sky: '#000022', lines: '#0ff', glow: 'cyan' };
     document.getElementById('map-menu').style.display='none'; 
     document.getElementById('char-menu').style.display='block'; 
+    selectChar('king');
 }
 
 function selectChar(t) { 
     playerType = t; 
     playerImg.src = (t === 'king') ? 'king_of_colour.png' : 'rookie.png'; 
+    document.getElementById('card-king').classList.remove('selected');
+    document.getElementById('card-rookie').classList.remove('selected');
+    document.getElementById('card-' + t).classList.add('selected');
 }
 
 function startGame() {
@@ -113,17 +123,17 @@ function startGame() {
     canvas.style.display='block'; 
     document.getElementById('stats').style.display='block';
     document.getElementById('live-shop').style.display='block';
-    gameActive = true; animate();
+    gameActive = true; 
+    animate();
 }
 
-// THE NEW LIVE STORE LOGIC
 function buyBoxInGame() {
     if(totalRupees >= 200 && gameActive) {
         totalRupees -= 200;
         localStorage.setItem('rupees', totalRupees);
-        mysteryBoxes.push({lane: playerLane, progress: 0.1});
-        // Visual feedback on the icon
-        storeHint.innerText = "BUYING...";
+        if (playerType === 'king') { isInvincible = true; invincibleTimer = 450; speed += 0.006; } 
+        else { rookieShields = 4; }
+        storeHint.innerText = "ACTIVATED!";
         setTimeout(() => { updateStoreUIState(); }, 800);
     }
 }
@@ -149,51 +159,78 @@ window.addEventListener('keydown', (e) => {
     if (e.key.toLowerCase() === 'b') buyBoxInGame();
 });
 
+function triggerGameOver(msg) {
+    gameActive = false; 
+    localStorage.setItem('rupees', totalRupees);
+    alert(msg + " \nTOTAL RUPEES: ₹" + totalRupees);
+    location.reload(); 
+}
+
 function update() {
     score++;
     if (!isInvincible) speed += 0.000003;
     playerVisualX += (LANES[playerLane] - playerVisualX) * 0.15;
 
-    // Powerup Timers
     if (isInvincible) {
         invincibleTimer--;
         if (invincibleTimer <= 0) { isInvincible = false; speed -= 0.006; }
     }
+    if (flashEffect > 0) flashEffect--;
 
-    // Spawning
+    // Spawning Clock
     spawnTimer++;
-    if (spawnTimer % 75 === 0) {
-        if (!isInvincible) { // GHOST MODE skips obstacles
-            let safe = Math.floor(Math.random()*3);
-            for(let i=0; i<3; i++) if(i!==safe && Math.random()>0.45) obstacles.push({lane: i, progress: 0});
+    if (spawnTimer % 72 === 0) {
+        // TRENDING SMART SPAWN: Never block all 3 lanes. Maximum 2 obstacles!
+        if (!isInvincible) { 
+            let emptyLane = Math.floor(Math.random() * 3); // Guaranteed escape hatch
+            for(let i = 0; i < 3; i++) {
+                if(i !== emptyLane) {
+                    if (Math.random() > 0.4) {
+                        // 15% chance to spawn a deadly Red Instant Kill obstacle, otherwise Normal obstacle
+                        let isInstantKill = Math.random() < 0.15;
+                        obstacles.push({lane: i, progress: 0, instantKill: isInstantKill});
+                    }
+                }
+            }
         }
         if (Math.random() > 0.4) coins.push({lane: Math.floor(Math.random()*3), progress: 0});
-        if (Math.random() > 0.96) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
+        if (Math.random() > 0.95) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
+        if (Math.random() > 0.97 && health < 3) hearts.push({lane: Math.floor(Math.random()*3), progress: 0}); // Spawn health pack if damaged
     }
 
-    // Processing items
-    [ {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, {list: coins, id: 2} ].forEach(group => {
+    // Process Active Arrays
+    [ {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, {list: coins, id: 2}, {list: hearts, id: 3} ].forEach(group => {
         for (let i = group.list.length - 1; i >= 0; i--) {
             let item = group.list[i];
             item.progress += speed;
 
-            // Collision Detection
+            // Accurate Collision Processing Check
             if (item.progress > 0.88 && item.progress < 0.98 && item.lane === playerLane) {
-                if (group.id === 0) { // Obstacle hit
-                    if (rookieShields > 0) { rookieShields--; group.list.splice(i, 1); }
-                    else if (!isInvincible) { 
-                        gameActive = false; 
-                        localStorage.setItem('rupees', totalRupees);
-                        alert("GAME OVER! RUPEES: ₹" + totalRupees);
-                        location.reload(); 
+                if (group.id === 0) { // Obstacle Logic
+                    if (rookieShields > 0) { 
+                        rookieShields--; 
+                        group.list.splice(i, 1); 
+                    } else if (!isInvincible) { 
+                        if (item.instantKill) {
+                            triggerGameOver("💥 OUCH! Hit a Laser Wall! INSTANT GAME OVER!");
+                        } else {
+                            health--; // Normal damage
+                            flashEffect = 10; // Trigger screen red flash
+                            group.list.splice(i, 1);
+                            if (health <= 0) {
+                                triggerGameOver("💔 OUT OF HEALTH! GAME OVER!");
+                            }
+                        }
                     }
-                } else if (group.id === 1) { // Box hit
+                } else if (group.id === 1) { // Mystery Box
                     if (playerType === 'king') { isInvincible = true; invincibleTimer = 450; speed += 0.006; }
                     else rookieShields = 4;
                     group.list.splice(i, 1);
-                } else { // Coin hit
+                } else if (group.id === 2) { // Currency Coins
                     totalRupees += 1;
-                    localStorage.setItem('rupees', totalRupees);
+                    group.list.splice(i, 1);
+                } else if (group.id === 3) { // Hearts
+                    if (health < 3) health++;
                     group.list.splice(i, 1);
                 }
             }
@@ -201,22 +238,23 @@ function update() {
         }
     });
 
-    // Update UI Elements
+    // Update Live Text UI elements
     document.getElementById('rupee-val').innerText = totalRupees;
     document.getElementById('score-val').innerText = Math.floor(score/10);
+    document.getElementById('hp-val').innerText = "❤️".repeat(health);
     document.getElementById('power-timer').innerText = isInvincible ? "👑 KING GHOST: ACTIVE" : (rookieShields > 0 ? "🛡️ SHIELDS: " + rookieShields : "");
-    updateStoreUIState(); // LIVE SHOP UPDATE
+    updateStoreUIState(); 
 }
 
 function draw() {
     ctx.fillStyle = currentMap.sky; ctx.fillRect(0,0,1000,750);
     
-    // Road (Fixed wide view for 3 lanes)
+    // Road Render Mapping
     ctx.fillStyle = '#111'; ctx.beginPath();
     ctx.moveTo(420, HORIZON_Y); ctx.lineTo(580, HORIZON_Y); 
     ctx.lineTo(1300, 750); ctx.lineTo(-300, 750); ctx.fill();
 
-    // Lanes (Yellow Powder)
+    // Lanes Line
     ctx.setLineDash([20,30]); ctx.strokeStyle = currentMap.lines; ctx.lineWidth = 10;
     ctx.shadowBlur = 15; ctx.shadowColor = currentMap.glow;
     [0.0, 0.33, 0.66, 1.0].forEach(l => {
@@ -227,7 +265,7 @@ function draw() {
     });
     ctx.setLineDash([]); ctx.shadowBlur = 0;
 
-    // Items
+    // Items Render Array Routing
     coins.forEach(c => {
         let s = 60 * c.progress;
         let x = 500 + (LANES[c.lane]-0.5) * (160 + c.progress * 1440);
@@ -240,28 +278,52 @@ function draw() {
         let y = HORIZON_Y + b.progress * 570;
         ctx.drawImage(boxImg, x-s/2, y-s, s, s);
     });
+    hearts.forEach(h => {
+        let s = 70 * h.progress;
+        let x = 500 + (LANES[h.lane]-0.5) * (160 + h.progress * 1440);
+        let y = HORIZON_Y + h.progress * 570;
+        ctx.drawImage(heartImg, x-s/2, y-s, s, s);
+    });
     obstacles.forEach(o => {
         let s = 250 * o.progress;
         let x = 500 + (LANES[o.lane]-0.5) * (160 + o.progress * 1600);
         let y = HORIZON_Y + o.progress * 570;
-        ctx.drawImage(obsImg, x-s/2, y-s, s, s);
+        
+        if (o.instantKill) {
+            // Draw Instant Kill obstacles with custom bright neon red warning structures
+            ctx.fillStyle = "#ff0055";
+            ctx.shadowBlur = 30; ctx.shadowColor = "#ff0000";
+            ctx.fillRect(x-s/2, y-s, s, s/3);
+            ctx.shadowBlur = 0;
+        } else {
+            ctx.drawImage(obsImg, x-s/2, y-s, s, s);
+        }
     });
 
-    // Player (PERFECT ALIGNMENT)
+    // Player Calculations
     let pSize = 240;
     let pX = 500 + (playerVisualX - 0.5) * 1100;
     let pY = 700;
 
     if (isInvincible) { ctx.shadowBlur = 40; ctx.shadowColor = "yellow"; }
-    
-    // Shield bubble visual
     if (rookieShields > 0) { 
         ctx.strokeStyle = "#0ff"; ctx.lineWidth = 5; 
         ctx.beginPath(); ctx.arc(pX, pY - (pSize/2), 120, 0, Math.PI*2); ctx.stroke(); 
     }
     
-    ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize);
+    try {
+        ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize);
+    } catch(e) {
+        ctx.fillStyle = (playerType === 'king') ? '#ffff00' : '#00ffff';
+        ctx.fillRect(pX - 30, pY - 120, 60, 120);
+    }
     ctx.shadowBlur = 0;
+
+    // Damage flash UI overlay
+    if (flashEffect > 0) {
+        ctx.fillStyle = `rgba(255, 0, 0, ${flashEffect / 15})`;
+        ctx.fillRect(0, 0, 1000, 750);
+    }
 }
 
 function animate() { if(gameActive) { update(); draw(); requestAnimationFrame(animate); } }
