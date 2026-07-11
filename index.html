@@ -2,20 +2,21 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>3D Runner: Rupee Store Edition</title>
+    <title>3D Runner: Ultimate Arcade Edition</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Arial Black', sans-serif; }
         canvas { border: 8px solid #ff0; display: none; box-shadow: 0 0 50px #aa0; }
         
         /* Step 1 & 2 Overlays */
-        .overlay { text-align: center; color: white; background: rgba(10,10,10,0.98); padding: 50px; border: 4px solid #ff0; width: 800px; z-index: 100; box-shadow: 0 0 60px rgba(255,255,0,0.3); }
-        .grid { display: flex; gap: 20px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
-        .card { cursor: pointer; border: 3px solid #444; padding: 15px; background: #222; transition: 0.3s; width: 220px; text-align: center;}
+        .overlay { text-align: center; color: white; background: rgba(10,10,10,0.98); padding: 40px; border: 4px solid #ff0; width: 850px; z-index: 100; box-shadow: 0 0 60px rgba(255,255,0,0.3); box-sizing: border-box; }
+        .grid { display: flex; gap: 15px; justify-content: center; margin-top: 20px; flex-wrap: wrap; }
+        .card { cursor: pointer; border: 3px solid #444; padding: 12px; background: #222; transition: 0.3s; width: 180px; text-align: center; border-radius: 6px; }
         .card:hover { border-color: #ff0; transform: translateY(-5px); }
-        .card img { width: 100%; height: 150px; object-fit: contain; background: #333; margin-bottom: 10px; }
-        h1 { margin: 0; text-transform: uppercase; color: #ff0; text-shadow: 0 0 10px #ff0; }
-        p.char-desc { font-size: 12px; color: #aaa; margin: 5px 0 0;}
-        .selected { border-color: #ff0; background: #333; }
+        .card img { width: 100%; height: 120px; object-fit: contain; background: #111; margin-bottom: 10px; border-radius: 4px; }
+        h1 { margin: 0; text-transform: uppercase; color: #ff0; text-shadow: 0 0 10px #ff0; font-size: 28px; }
+        h2 { margin: 15px 0 5px 0; color: #fff; font-size: 18px; text-transform: uppercase; }
+        p.char-desc { font-size: 11px; color: #aaa; margin: 5px 0 0; min-height: 30px;}
+        .selected { border-color: #ff0; background: #333; box-shadow: 0 0 15px #ff0; }
 
         /* In-Game HUD & Store */
         #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; display: none; z-index: 10; pointer-events: none; line-height: 1.4; }
@@ -25,7 +26,7 @@
         #live-shop { position: absolute; top: 20px; right: 20px; display: none; z-index: 10; text-align: right; }
         .btn-store { background: none; border: none; cursor: pointer; outline: none; transition: 0.2s; position: relative; }
         .btn-store:disabled { opacity: 0.3; cursor: not-allowed; }
-        .btn-store img { width: 70px; height: 70px; filter: drop-shadow(0 0 15px #ff0); }
+        .btn-store img { width: 75px; height: 75px; filter: drop-shadow(0 0 15px #ff0); }
         .btn-store:not(:disabled):hover img { transform: scale(1.15); filter: drop-shadow(0 0 25px #ff0); }
         
         @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
@@ -39,37 +40,49 @@
         HP: <span class="hp-text" id="hp-val">❤️❤️❤️</span><br>
         CRED: <span id="score-val">0</span><br>
         WALLET: <span class="rupee-text">₹<span id="rupee-val">0</span></span><br>
-        <span id="power-timer" style="color:#0ff; font-size:18px;"></span>
+        <span id="power-timer" style="color:#0ff; font-size:18px; font-weight: bold;"></span>
     </div>
 
     <div id="live-shop">
         <button id="store-btn" class="btn-store" onclick="buyBoxInGame()" disabled>
-            <img src="store_icon.png" alt="Buy Mystery Box" onerror="this.src='https://cdn-icons-png.flaticon.com/512/3737/3737372.png'">
+            <img src="https://cdn-icons-png.flaticon.com/512/3737/3737372.png" alt="Buy Mystery Box">
             <div id="store-hint" class="btn-hint">LOCKED</div>
         </button>
     </div>
 
-    <div id="map-menu" class="overlay">
-        <h1> Step 1: DISTRICT SELECT </h1>
+    <!-- Combined Setup Screen -->
+    <div id="setup-menu" class="overlay">
+        <h1>ARCADE RUNNER SETUP</h1>
+        
+        <h2>1. Choose District Map</h2>
         <div class="grid">
-            <div class="card" onclick="selectMap('yellowCity')"><div style="background: #555500; height: 100px;"></div><h3>YELLOW CITY</h3></div>
-            <div class="card" onclick="selectMap('neonNight')"><div style="background: #000044; height: 100px;"></div><h3>NEON NIGHT</h3></div>
+            <div id="map-yellow" class="card selected" onclick="selectMap('yellowCity')"><div style="background: #555500; height: 60px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>YELLOW CITY</h3></div>
+            <div id="map-neon" class="card" onclick="selectMap('neonNight')"><div style="background: #000044; height: 60px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>NEON NIGHT</h3></div>
+            <div id="map-tokyo" class="card" onclick="selectMap('tokyoPulse')"><div style="background: #550055; height: 60px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>TOKYO PULSE</h3></div>
+            <div id="map-emerald" class="card" onclick="selectMap('emeraldCore')"><div style="background: #004411; height: 60px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>EMERALD CORE</h3></div>
         </div>
-    </div>
 
-    <div id="char-menu" class="overlay" style="display:none;">
-        <h1> Step 2: CHOOSE RUNNER </h1>
+        <h2>2. Choose Your Runner</h2>
         <div class="grid">
-            <div id="card-king" class="card" onclick="selectChar('king')">
-                <img src="king_of_colour.png" onerror="this.src='https://via.placeholder.com/150x150/ffff00/000000?text=KING'">
-                <h3>KING OF COLOUR</h3><p class="char-desc">POWER: GHOST MODE</p>
+            <div id="card-king" class="card selected" onclick="selectChar('king')">
+                <img src="https://cdn-icons-png.flaticon.com/512/3408/3408545.png">
+                <h3>KING OF COLOUR</h3><p class="char-desc">🎨 SPAWNS PAINT CANS: Full Heal, +₹100, Harmless No-Obstacle Phase!</p>
             </div>
             <div id="card-rookie" class="card" onclick="selectChar('rookie')">
-                <img src="rookie.png" onerror="this.src='https://via.placeholder.com/150x150/cccccc/000000?text=ROOKIE'">
-                <h3>THE ROOKIE</h3><p class="char-desc">POWER: 4 SHIELDS</p>
+                <img src="https://cdn-icons-png.flaticon.com/512/616/616430.png">
+                <h3>THE ROOKIE</h3><p class="char-desc">🛡️ BUBBLE SHIELD: Spawns defensive barriers to block collisions.</p>
+            </div>
+            <div id="card-chrono" class="card" onclick="selectChar('chrono')">
+                <img src="https://cdn-icons-png.flaticon.com/512/3408/3408473.png">
+                <h3>TIME WEAVER</h3><p class="char-desc">⏳ CHRONO SHIFT: Permanently runs 35% slower for effortless dodging.</p>
+            </div>
+            <div id="card-magnet" class="card" onclick="selectChar('magnet')">
+                <img src="https://cdn-icons-png.flaticon.com/512/1043/1043164.png">
+                <h3>RUPEE MAGNET</h3><p class="char-desc">🧲 CASH ATTRACT: Vacuum pull gathers coins from all lanes instantly.</p>
             </div>
         </div>
-        <button onclick="startGame()" style="margin-top:30px; padding:15px 50px; background:#ff0; font-weight:bold; cursor:pointer; font-size:20px; border:none;">START RUN ➔</button>
+
+        <button onclick="startGame()" style="margin-top:25px; padding:15px 60px; background:#ff0; font-weight:bold; cursor:pointer; font-size:22px; border:none; border-radius:4px; box-shadow: 0 4px 15px rgba(255,255,0,0.4);">LAUNCH RUN ➔</button>
     </div>
 
     <canvas id="gameCanvas"></canvas>
@@ -80,49 +93,71 @@ const ctx = canvas.getContext('2d');
 const storeBtn = document.getElementById('store-btn');
 const storeHint = document.getElementById('store-hint');
 
-// Assets
-let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image(), heartImg = new Image();
-obsImg.src = 'obstacle.png'; 
-boxImg.src = 'box.png'; 
-coinImg.src = 'https://cdn-icons-png.flaticon.com/512/217/217853.png'; 
-heartImg.src = 'https://cdn-icons-png.flaticon.com/512/833/833472.png';
+// Global Images
+let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image(), heartImg = new Image(), killImg = new Image(), paintImg = new Image();
+
+obsImg.src = 'https://cdn-icons-png.flaticon.com/512/4601/4601679.png'; 
+boxImg.src = 'https://cdn-icons-png.flaticon.com/512/2622/2622104.png'; 
+coinImg.src = 'https://cdn-icons-png.flaticon.com/512/217/217853.png';  
+heartImg.src = 'https://cdn-icons-png.flaticon.com/512/833/833472.png'; 
+killImg.src = 'https://cdn-icons-png.flaticon.com/512/179/179386.png';   
+paintImg.src = 'https://cdn-icons-png.flaticon.com/512/2970/2970785.png'; // Glowing Yellow Paint Can
 
 canvas.width = 1000; canvas.height = 750;
 const HORIZON_Y = 180;
 const LANES = [0.2, 0.5, 0.8];
 
-// State
+// Engine Settings
 let totalRupees = parseInt(localStorage.getItem('rupees')) || 0;
-let score = 0, gameActive = false, speed = 0.009, playerType = 'king';
+let score = 0, gameActive = false, baseSpeed = 0.009, currentSpeed = 0.009, playerType = 'king';
 let playerLane = 1, playerVisualX = 0.5, spawnTimer = 0;
-let obstacles = [], mysteryBoxes = [], coins = [], hearts = [];
+let obstacles = [], mysteryBoxes = [], coins = [], hearts = [], paintCans = [];
 let isInvincible = false, invincibleTimer = 0, rookieShields = 0;
-let health = 3; // Start with 3 Hit Points
-let flashEffect = 0; // Screen flash counter when hit
+let paintActive = false, paintTimer = 0; // New King of Colour States
+let health = 3;
+let flashEffect = 0, paintFlash = 0; 
+let mapSelection = 'yellowCity';
 let currentMap = { sky: '#222200', lines: '#ff0', glow: 'yellow' };
 
-playerImg.src = 'king_of_colour.png';
+const URLS = {
+    king: 'https://cdn-icons-png.flaticon.com/512/3408/3408545.png',
+    rookie: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
+    chrono: 'https://cdn-icons-png.flaticon.com/512/3408/3408473.png',
+    magnet: 'https://cdn-icons-png.flaticon.com/512/1043/1043164.png'
+};
+
+playerImg.src = URLS.king;
 
 function selectMap(m) { 
+    mapSelection = m;
+    const targets = { yellowCity: 'yellow', neonNight: 'neon', tokyoPulse: 'tokyo', emeraldCore: 'emerald' };
+    ['yellow', 'neon', 'tokyo', 'emerald'].forEach(id => document.getElementById('map-'+id).classList.remove('selected'));
+    document.getElementById('map-' + targets[m]).classList.add('selected');
+
+    if(m === 'yellowCity') currentMap = { sky: '#222200', lines: '#ff0', glow: 'yellow' };
     if(m === 'neonNight') currentMap = { sky: '#000022', lines: '#0ff', glow: 'cyan' };
-    document.getElementById('map-menu').style.display='none'; 
-    document.getElementById('char-menu').style.display='block'; 
-    selectChar('king');
+    if(m === 'tokyoPulse') currentMap = { sky: '#200020', lines: '#f0f', glow: '#f0f' };
+    if(m === 'emeraldCore') currentMap = { sky: '#001500', lines: '#0f0', glow: '#0f0' };
 }
 
 function selectChar(t) { 
     playerType = t; 
-    playerImg.src = (t === 'king') ? 'king_of_colour.png' : 'rookie.png'; 
-    document.getElementById('card-king').classList.remove('selected');
-    document.getElementById('card-rookie').classList.remove('selected');
+    playerImg.src = URLS[t]; 
+    ['king', 'rookie', 'chrono', 'magnet'].forEach(id => document.getElementById('card-'+id).classList.remove('selected'));
     document.getElementById('card-' + t).classList.add('selected');
 }
 
 function startGame() {
-    document.getElementById('char-menu').style.display='none';
+    document.getElementById('setup-menu').style.display='none';
     canvas.style.display='block'; 
     document.getElementById('stats').style.display='block';
     document.getElementById('live-shop').style.display='block';
+    
+    // Balanced Speed Multipliers for Characters
+    if(playerType === 'chrono') baseSpeed = 0.006;
+    else baseSpeed = 0.009;
+    
+    currentSpeed = baseSpeed;
     gameActive = true; 
     animate();
 }
@@ -131,11 +166,32 @@ function buyBoxInGame() {
     if(totalRupees >= 200 && gameActive) {
         totalRupees -= 200;
         localStorage.setItem('rupees', totalRupees);
-        if (playerType === 'king') { isInvincible = true; invincibleTimer = 450; speed += 0.006; } 
-        else { rookieShields = 4; }
+        triggerMysteryBoxReward();
         storeHint.innerText = "ACTIVATED!";
         setTimeout(() => { updateStoreUIState(); }, 800);
     }
+}
+
+function triggerMysteryBoxReward() {
+    if (playerType === 'king') { 
+        triggerPaintSuperpower();
+    } else if (playerType === 'rookie') { 
+        rookieShields = 4; 
+    } else if (playerType === 'chrono') { 
+        isInvincible = true; invincibleTimer = 350; 
+    } else if (playerType === 'magnet') {
+        isInvincible = true; invincibleTimer = 350;
+    }
+}
+
+function triggerPaintSuperpower() {
+    paintActive = true;
+    paintTimer = 450; // Around 7-8 seconds of safety
+    health = 3;       // Full Recover
+    totalRupees += 100;
+    localStorage.setItem('rupees', totalRupees);
+    obstacles = [];   // Clear running track immediately
+    paintFlash = 15;  // Yellow screen burst effect
 }
 
 function updateStoreUIState() {
@@ -151,7 +207,7 @@ function updateStoreUIState() {
     }
 }
 
-// Controls
+// Keyboard Bindings
 window.addEventListener('keydown', (e) => {
     if (!gameActive) return;
     if (e.key === 'ArrowLeft' && playerLane > 0) playerLane--;
@@ -168,69 +224,102 @@ function triggerGameOver(msg) {
 
 function update() {
     score++;
-    if (!isInvincible) speed += 0.000003;
+    
+    // Scale speed over time smoothly
+    if (!isInvincible && !paintActive) {
+        baseSpeed += 0.000002;
+        currentSpeed = baseSpeed;
+    }
+    
     playerVisualX += (LANES[playerLane] - playerVisualX) * 0.15;
 
+    // Active Countdown Timers
     if (isInvincible) {
         invincibleTimer--;
-        if (invincibleTimer <= 0) { isInvincible = false; speed -= 0.006; }
+        if (invincibleTimer <= 0) { isInvincible = false; currentSpeed = baseSpeed; }
     }
+    if (paintActive) {
+        paintTimer--;
+        currentSpeed = baseSpeed * 1.25; // Speed up safely during painting rush
+        if (paintTimer <= 0) { paintActive = false; currentSpeed = baseSpeed; }
+    }
+    
     if (flashEffect > 0) flashEffect--;
+    if (paintFlash > 0) paintFlash--;
 
-    // Spawning Clock
+    // Spawning Loops
     spawnTimer++;
-    if (spawnTimer % 72 === 0) {
-        // TRENDING SMART SPAWN: Never block all 3 lanes. Maximum 2 obstacles!
-        if (!isInvincible) { 
-            let emptyLane = Math.floor(Math.random() * 3); // Guaranteed escape hatch
+    if (spawnTimer % 70 === 0) {
+        let emptyLane = Math.floor(Math.random() * 3); // Guarantee one open route
+        
+        // Block obstacle spawns completely if King Paint ability is processing
+        if (!isInvincible && !paintActive) { 
             for(let i = 0; i < 3; i++) {
                 if(i !== emptyLane) {
-                    if (Math.random() > 0.4) {
-                        // 15% chance to spawn a deadly Red Instant Kill obstacle, otherwise Normal obstacle
-                        let isInstantKill = Math.random() < 0.15;
+                    if (Math.random() > 0.45) {
+                        let isInstantKill = Math.random() < 0.12; 
                         obstacles.push({lane: i, progress: 0, instantKill: isInstantKill});
                     }
                 }
             }
         }
+        
+        // Item Spawning Rates
         if (Math.random() > 0.4) coins.push({lane: Math.floor(Math.random()*3), progress: 0});
-        if (Math.random() > 0.95) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
-        if (Math.random() > 0.97 && health < 3) hearts.push({lane: Math.floor(Math.random()*3), progress: 0}); // Spawn health pack if damaged
+        if (Math.random() > 0.94) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
+        if (Math.random() > 0.97 && health < 3) hearts.push({lane: Math.floor(Math.random()*3), progress: 0});
+        
+        // Unique System: Spawn paint cans on track if King of Colour is picked
+        if (playerType === 'king' && Math.random() > 0.85) {
+            paintCans.push({lane: Math.floor(Math.random()*3), progress: 0});
+        }
     }
 
-    // Process Active Arrays
-    [ {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, {list: coins, id: 2}, {list: hearts, id: 3} ].forEach(group => {
+    // Magnet Processing Logic 
+    if (playerType === 'magnet') {
+        coins.forEach(c => {
+            if (c.progress > 0.35) { // Attract when within vision range
+                c.lane = playerLane;
+            }
+        });
+    }
+
+    // Process Active Game Elements Array Lists
+    [ 
+      {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, 
+      {list: coins, id: 2}, {list: hearts, id: 3}, {list: paintCans, id: 4} 
+    ].forEach(group => {
         for (let i = group.list.length - 1; i >= 0; i--) {
             let item = group.list[i];
-            item.progress += speed;
+            item.progress += currentSpeed;
 
-            // Accurate Collision Processing Check
+            // Box/Entity Hit Matrix Check
             if (item.progress > 0.88 && item.progress < 0.98 && item.lane === playerLane) {
-                if (group.id === 0) { // Obstacle Logic
+                if (group.id === 0) { 
                     if (rookieShields > 0) { 
                         rookieShields--; 
                         group.list.splice(i, 1); 
-                    } else if (!isInvincible) { 
+                    } else if (!isInvincible && !paintActive) { 
                         if (item.instantKill) {
-                            triggerGameOver("💥 OUCH! Hit a Laser Wall! INSTANT GAME OVER!");
+                            triggerGameOver("💥 DEADLY BARRIER! INSTANT GAME OVER!");
                         } else {
-                            health--; // Normal damage
-                            flashEffect = 10; // Trigger screen red flash
+                            health--; 
+                            flashEffect = 10; 
                             group.list.splice(i, 1);
-                            if (health <= 0) {
-                                triggerGameOver("💔 OUT OF HEALTH! GAME OVER!");
-                            }
+                            if (health <= 0) triggerGameOver("💔 OUT OF HEALTH! GAME OVER!");
                         }
                     }
                 } else if (group.id === 1) { // Mystery Box
-                    if (playerType === 'king') { isInvincible = true; invincibleTimer = 450; speed += 0.006; }
-                    else rookieShields = 4;
+                    triggerMysteryBoxReward();
                     group.list.splice(i, 1);
-                } else if (group.id === 2) { // Currency Coins
+                } else if (group.id === 2) { // Coins
                     totalRupees += 1;
                     group.list.splice(i, 1);
                 } else if (group.id === 3) { // Hearts
                     if (health < 3) health++;
+                    group.list.splice(i, 1);
+                } else if (group.id === 4) { // Paint Can Hit
+                    triggerPaintSuperpower();
                     group.list.splice(i, 1);
                 }
             }
@@ -238,23 +327,36 @@ function update() {
         }
     });
 
-    // Update Live Text UI elements
+    // Write Values back to UI
     document.getElementById('rupee-val').innerText = totalRupees;
     document.getElementById('score-val').innerText = Math.floor(score/10);
     document.getElementById('hp-val').innerText = "❤️".repeat(health);
-    document.getElementById('power-timer').innerText = isInvincible ? "👑 KING GHOST: ACTIVE" : (rookieShields > 0 ? "🛡️ SHIELDS: " + rookieShields : "");
+    
+    // Dynamic Timer Text Layouts
+    if (paintActive) {
+        document.getElementById('power-timer').innerText = `🎨 HARMLESS PAINT TIME: ${Math.ceil(paintTimer/60)}s`;
+        document.getElementById('power-timer').style.color = "#ff0";
+    } else if (isInvincible) {
+        document.getElementById('power-timer').innerText = `⚡ BOOST MODE ACTIVE: ${Math.ceil(invincibleTimer/60)}s`;
+        document.getElementById('power-timer').style.color = "#0ff";
+    } else if (rookieShields > 0) {
+        document.getElementById('power-timer').innerText = `🛡️ SHIELDS POWER: ${rookieShields}`;
+        document.getElementById('power-timer').style.color = "#0ff";
+    } else {
+        document.getElementById('power-timer').innerText = "";
+    }
+    
     updateStoreUIState(); 
 }
 
 function draw() {
     ctx.fillStyle = currentMap.sky; ctx.fillRect(0,0,1000,750);
     
-    // Road Render Mapping
+    // Base 3D Tracks Rendering
     ctx.fillStyle = '#111'; ctx.beginPath();
     ctx.moveTo(420, HORIZON_Y); ctx.lineTo(580, HORIZON_Y); 
     ctx.lineTo(1300, 750); ctx.lineTo(-300, 750); ctx.fill();
 
-    // Lanes Line
     ctx.setLineDash([20,30]); ctx.strokeStyle = currentMap.lines; ctx.lineWidth = 10;
     ctx.shadowBlur = 15; ctx.shadowColor = currentMap.glow;
     [0.0, 0.33, 0.66, 1.0].forEach(l => {
@@ -265,9 +367,9 @@ function draw() {
     });
     ctx.setLineDash([]); ctx.shadowBlur = 0;
 
-    // Items Render Array Routing
+    // Draw Floating Objects Loop Pipeline
     coins.forEach(c => {
-        let s = 60 * c.progress;
+        let s = 65 * c.progress;
         let x = 500 + (LANES[c.lane]-0.5) * (160 + c.progress * 1440);
         let y = HORIZON_Y + c.progress * 570;
         ctx.drawImage(coinImg, x-s/2, y-s, s, s);
@@ -279,10 +381,18 @@ function draw() {
         ctx.drawImage(boxImg, x-s/2, y-s, s, s);
     });
     hearts.forEach(h => {
-        let s = 70 * h.progress;
+        let s = 75 * h.progress;
         let x = 500 + (LANES[h.lane]-0.5) * (160 + h.progress * 1440);
         let y = HORIZON_Y + h.progress * 570;
         ctx.drawImage(heartImg, x-s/2, y-s, s, s);
+    });
+    paintCans.forEach(p => {
+        let s = 100 * p.progress;
+        let x = 500 + (LANES[p.lane]-0.5) * (160 + p.progress * 1440);
+        let y = HORIZON_Y + p.progress * 570;
+        ctx.shadowBlur = 20; ctx.shadowColor = "#ff0";
+        ctx.drawImage(paintImg, x-s/2, y-s, s, s);
+        ctx.shadowBlur = 0;
     });
     obstacles.forEach(o => {
         let s = 250 * o.progress;
@@ -290,38 +400,37 @@ function draw() {
         let y = HORIZON_Y + o.progress * 570;
         
         if (o.instantKill) {
-            // Draw Instant Kill obstacles with custom bright neon red warning structures
-            ctx.fillStyle = "#ff0055";
-            ctx.shadowBlur = 30; ctx.shadowColor = "#ff0000";
-            ctx.fillRect(x-s/2, y-s, s, s/3);
+            ctx.shadowBlur = 35; ctx.shadowColor = "#ff0000";
+            ctx.drawImage(killImg, x-s/2, y-s, s, s);
             ctx.shadowBlur = 0;
         } else {
             ctx.drawImage(obsImg, x-s/2, y-s, s, s);
         }
     });
 
-    // Player Calculations
-    let pSize = 240;
+    // Player Rendering Matrix
+    let pSize = 230;
     let pX = 500 + (playerVisualX - 0.5) * 1100;
-    let pY = 700;
+    let pY = 705;
 
-    if (isInvincible) { ctx.shadowBlur = 40; ctx.shadowColor = "yellow"; }
+    if (isInvincible) { ctx.shadowBlur = 45; ctx.shadowColor = "cyan"; }
+    if (paintActive) { ctx.shadowBlur = 50; ctx.shadowColor = "yellow"; }
+    
     if (rookieShields > 0) { 
-        ctx.strokeStyle = "#0ff"; ctx.lineWidth = 5; 
-        ctx.beginPath(); ctx.arc(pX, pY - (pSize/2), 120, 0, Math.PI*2); ctx.stroke(); 
+        ctx.strokeStyle = "#0ff"; ctx.lineWidth = 6; 
+        ctx.beginPath(); ctx.arc(pX, pY - (pSize/2), 125, 0, Math.PI*2); ctx.stroke(); 
     }
     
-    try {
-        ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize);
-    } catch(e) {
-        ctx.fillStyle = (playerType === 'king') ? '#ffff00' : '#00ffff';
-        ctx.fillRect(pX - 30, pY - 120, 60, 120);
-    }
+    ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize);
     ctx.shadowBlur = 0;
 
-    // Damage flash UI overlay
+    // Filter Screens Overlay Blits
     if (flashEffect > 0) {
-        ctx.fillStyle = `rgba(255, 0, 0, ${flashEffect / 15})`;
+        ctx.fillStyle = `rgba(255, 0, 0, ${flashEffect / 14})`;
+        ctx.fillRect(0, 0, 1000, 750);
+    }
+    if (paintFlash > 0) {
+        ctx.fillStyle = `rgba(255, 255, 0, ${paintFlash / 18})`;
         ctx.fillRect(0, 0, 1000, 750);
     }
 }
