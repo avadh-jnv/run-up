@@ -5,88 +5,65 @@
     <title>3D Runner: Ultimate Arcade Edition</title>
     <style>
         body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; font-family: 'Arial Black', sans-serif; }
-        canvas { border: 8px solid #ff0; display: none; box-shadow: 0 0 50px #aa0; }
+        canvas { border: 8px solid #ff0; display: none; box-shadow: 0 0 50px #aa0; background: #000; }
         
-        /* Fixed, Highly Scannable Setup Overlay */
-        .overlay { text-align: center; color: white; background: rgba(10,10,10,0.98); padding: 25px; border: 4px solid #ff0; width: 850px; z-index: 100; box-shadow: 0 0 60px rgba(255,255,0,0.3); box-sizing: border-box; border-radius: 12px; }
-        .grid { display: flex; gap: 12px; justify-content: center; margin-top: 10px; flex-wrap: wrap; }
-        .card { cursor: pointer; border: 3px solid #444; padding: 10px; background: #222; transition: 0.2s; width: 185px; text-align: center; border-radius: 6px; box-sizing: border-box; }
+        /* Scrollable Setup Overlay for Massive Roster */
+        .overlay { text-align: center; color: white; background: rgba(10,10,10,0.95); padding: 20px; border: 4px solid #ff0; width: 95vw; max-width: 1000px; max-height: 95vh; overflow-y: auto; z-index: 100; box-shadow: 0 0 60px rgba(255,255,0,0.3); border-radius: 12px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+        .card { cursor: pointer; border: 3px solid #444; padding: 8px; background: #222; transition: 0.2s; text-align: center; border-radius: 6px; }
         .card:hover { border-color: #ff0; transform: translateY(-3px); }
-        .card img { width: 100%; height: 95px; object-fit: contain; background: #111; margin-bottom: 5px; border-radius: 4px; }
-        h1 { margin: 0 0 5px 0; text-transform: uppercase; color: #ff0; text-shadow: 0 0 10px #ff0; font-size: 26px; }
-        h2 { margin: 12px 0 4px 0; color: #fff; font-size: 16px; text-transform: uppercase; letter-spacing: 1px; }
-        p.char-desc { font-size: 10px; color: #aaa; margin: 4px 0 0; min-height: 28px; line-height: 1.2; }
+        .card img, .card .color-box { width: 100%; height: 70px; object-fit: contain; background: #111; margin-bottom: 5px; border-radius: 4px; box-shadow: inset 0 0 10px #000; }
+        h1 { margin: 0 0 5px 0; color: #ff0; text-shadow: 0 0 10px #ff0; font-size: 24px; text-transform: uppercase; }
+        h2 { margin: 15px 0 5px 0; color: #fff; font-size: 16px; text-transform: uppercase; background: #333; padding: 5px; border-radius: 4px; }
+        h3 { margin: 0; font-size: 11px; }
+        p.char-desc { font-size: 9px; color: #aaa; margin: 3px 0 0; line-height: 1.2; }
         .selected { border-color: #ff0; background: #333; box-shadow: 0 0 12px #ff0; }
 
-        /* Big, Clear Navigation Launch Button */
-        .launch-btn { margin-top: 25px; padding: 12px 60px; background: #ff0; color: #000; font-weight: bold; cursor: pointer; font-size: 22px; border: none; border-radius: 6px; box-shadow: 0 4px 20px rgba(255,255,0,0.5); transition: 0.2s; font-family: 'Arial Black', sans-serif; text-transform: uppercase; }
-        .launch-btn:hover { transform: scale(1.05); background: #fff; box-shadow: 0 4px 30px #ff0; }
+        .launch-btn { margin-top: 20px; padding: 15px 50px; background: #ff0; color: #000; font-weight: bold; cursor: pointer; font-size: 20px; border: none; border-radius: 6px; box-shadow: 0 4px 20px rgba(255,255,0,0.5); text-transform: uppercase; }
+        .launch-btn:hover { background: #fff; box-shadow: 0 4px 30px #ff0; transform: scale(1.02); }
 
-        /* In-Game HUD & Store */
-        #stats { position: absolute; top: 20px; left: 20px; color: #fff; font-size: 24px; display: none; z-index: 10; pointer-events: none; line-height: 1.4; }
-        .rupee-text { color: #44ff44; text-shadow: 0 0 10px #00ff00; font-weight: bold;}
-        .hp-text { color: #ff4444; text-shadow: 0 0 10px #ff0000; font-weight: bold; }
+        #stats { position: absolute; top: 15px; left: 15px; color: #fff; font-size: 20px; display: none; z-index: 10; pointer-events: none; line-height: 1.4; text-shadow: 2px 2px 4px #000; }
+        .rupee-text { color: #44ff44; text-shadow: 0 0 10px #00ff00; }
+        .hp-text { color: #ff4444; text-shadow: 0 0 10px #ff0000; }
+        #creator-tag { position: absolute; bottom: 10px; right: 15px; color: rgba(255,255,255,0.5); font-size: 14px; z-index: 10; display: none; font-family: sans-serif; }
         
-        #live-shop { position: absolute; top: 20px; right: 20px; display: none; z-index: 10; text-align: right; }
-        .btn-store { background: none; border: none; cursor: pointer; outline: none; transition: 0.2s; position: relative; }
-        .btn-store:disabled { opacity: 0.3; cursor: not-allowed; }
-        .btn-store img { width: 75px; height: 75px; filter: drop-shadow(0 0 15px #ff0); }
-        .btn-store:not(:disabled):hover img { transform: scale(1.15); filter: drop-shadow(0 0 25px #ff0); }
-        
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
-        .can-afford { animation: pulse 1s infinite; }
-        .btn-hint { position: absolute; bottom: -20px; left: 0; width: 100%; text-align: center; color: #ff0; font-size: 12px; }
+        #live-shop { position: absolute; top: 15px; right: 15px; display: none; z-index: 10; }
+        .btn-store { background: none; border: none; cursor: pointer; transition: 0.2s; position: relative; }
+        .btn-store:disabled { opacity: 0.3; }
+        .btn-store img { width: 60px; height: 60px; filter: drop-shadow(0 0 10px #ff0); }
+        .btn-hint { position: absolute; bottom: -15px; left: 0; width: 100%; text-align: center; color: #ff0; font-size: 12px; }
     </style>
 </head>
 <body>
 
     <div id="stats">
         HP: <span class="hp-text" id="hp-val">❤️❤️❤️</span><br>
-        CRED: <span id="score-val">0</span><br>
+        SCORE: <span id="score-val">0</span><br>
         WALLET: <span class="rupee-text">₹<span id="rupee-val">0</span></span><br>
-        <span id="power-timer" style="color:#0ff; font-size:18px; font-weight: bold;"></span>
+        <span id="power-timer" style="color:#0ff; font-size:16px;"></span>
     </div>
+    <div id="creator-tag">Created by Avadh Prajapati</div>
 
     <div id="live-shop">
         <button id="store-btn" class="btn-store" onclick="buyBoxInGame()" disabled>
-            <img src="https://cdn-icons-png.flaticon.com/512/3737/3737372.png" alt="Buy Mystery Box">
+            <img src="https://cdn-icons-png.flaticon.com/512/3737/3737372.png">
             <div id="store-hint" class="btn-hint">LOCKED</div>
         </button>
     </div>
 
-    <!-- Redesigned Interface Grid Screen -->
     <div id="setup-menu" class="overlay">
-        <h1>ARCADE RUNNER SETUP</h1>
+        <h1>ARCADE RUNNER: X-TREME</h1>
         
-        <h2>1. Select District Map</h2>
-        <div class="grid">
-            <div id="map-yellow" class="card selected" onclick="selectMap('yellowCity')"><div style="background: #555500; height: 45px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>YELLOW CITY</h3></div>
-            <div id="map-neon" class="card" onclick="selectMap('neonNight')"><div style="background: #000044; height: 45px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>NEON NIGHT</h3></div>
-            <div id="map-tokyo" class="card" onclick="selectMap('tokyoPulse')"><div style="background: #550055; height: 45px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>TOKYO PULSE</h3></div>
-            <div id="map-emerald" class="card" onclick="selectMap('emeraldCore')"><div style="background: #004411; height: 45px; border-radius:4px; box-shadow: inset 0 0 15px #000;"></div><h3>EMERALD CORE</h3></div>
+        <h2>1. Select District (10 Maps)</h2>
+        <div class="grid" id="map-grid">
+            <!-- Maps Injected via JS -->
         </div>
 
-        <h2>2. Select Your Runner</h2>
-        <div class="grid">
-            <div id="card-king" class="card selected" onclick="selectChar('king')">
-                <img src="https://cdn-icons-png.flaticon.com/512/3408/3408545.png">
-                <h3>KING OF COLOUR</h3><p class="char-desc">🎨 PAINT CANS: Full Heal, +₹100, Invincible Harmless Run Phase!</p>
-            </div>
-            <div id="card-rookie" class="card" onclick="selectChar('rookie')">
-                <img src="https://cdn-icons-png.flaticon.com/512/616/616430.png">
-                <h3>THE ROOKIE</h3><p class="char-desc">🛡️ BUBBLE SHIELD: Spawns defensive layered safety buffers.</p>
-            </div>
-            <div id="card-chrono" class="card" onclick="selectChar('chrono')">
-                <img src="https://cdn-icons-png.flaticon.com/512/3408/3408473.png">
-                <h3>TIME WEAVER</h3><p class="char-desc">⏳ CHRONO SHIFT: Runs 35% slower for easy hazard dodging.</p>
-            </div>
-            <div id="card-magnet" class="card" onclick="selectChar('magnet')">
-                <img src="https://cdn-icons-png.flaticon.com/512/1043/1043164.png">
-                <h3>RUPEE MAGNET</h3><p class="char-desc">🧲 CASH ATTRACT: Vacuum pulls track coins instantly.</p>
-            </div>
+        <h2>2. Select Runner (10 Characters)</h2>
+        <div class="grid" id="char-grid">
+            <!-- Characters Injected via JS -->
         </div>
 
-        <!-- This will always be completely visible right here -->
         <button class="launch-btn" onclick="startGame()">Launch Game ➔</button>
     </div>
 
@@ -95,12 +72,52 @@
 <script>
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
-const storeBtn = document.getElementById('store-btn');
-const storeHint = document.getElementById('store-hint');
+canvas.width = 1000; canvas.height = 750;
+const HORIZON_Y = 180;
+const LANES = [0.2, 0.5, 0.8];
 
-// Global Images
+// Map Data
+const maps = [
+    { id: 'yellowCity', name: 'Yellow City', sky: '#222200', lines: '#ff0', glow: 'yellow' },
+    { id: 'neonNight', name: 'Neon Night', sky: '#000022', lines: '#0ff', glow: 'cyan' },
+    { id: 'tokyoPulse', name: 'Tokyo Pulse', sky: '#200020', lines: '#f0f', glow: '#f0f' },
+    { id: 'emeraldCore', name: 'Emerald Core', sky: '#001500', lines: '#0f0', glow: '#0f0' },
+    { id: 'disasterZone', name: 'Disaster Zone', sky: '#2a0800', lines: '#ff4400', glow: '#ff2200' },
+    { id: 'cosmic', name: 'Cosmic Observatory', sky: '#000511', lines: '#ffd700', glow: '#ffaa00' },
+    { id: 'vaporwave', name: 'Vaporwave', sky: '#1a0b2e', lines: '#00ffff', glow: '#ff00ff' },
+    { id: 'glitch', name: 'Glitch Matrix', sky: '#111', lines: '#fff', glow: '#aaa' },
+    { id: 'abyss', name: 'Abyssal Depths', sky: '#001122', lines: '#0044ff', glow: '#0088ff' },
+    { id: 'celestial', name: 'Celestial Rift', sky: '#ffffff', lines: '#000000', glow: '#555' }
+];
+
+// Character Data
+const characters = [
+    { id: 'king', name: 'King of Colour', img: 'king_of_colour.png', desc: '🎨 Paint Cans: Full Heal, +₹100, Invincible.' },
+    { id: 'rookie', name: 'The Rookie', img: 'https://cdn-icons-png.flaticon.com/512/616/616430.png', desc: '🛡️ Shield: 4 Hits blocked.' },
+    { id: 'chrono', name: 'Time Weaver', img: 'https://cdn-icons-png.flaticon.com/512/3408/3408473.png', desc: '⏳ Slows down track speed permanently.' },
+    { id: 'magnet', name: 'Rupee Magnet', img: 'https://cdn-icons-png.flaticon.com/512/1043/1043164.png', desc: '🧲 Pulls all coins to your lane automatically.' },
+    { id: 'ninja', name: 'Shadow Ninja', img: 'https://cdn-icons-png.flaticon.com/512/2006/2006604.png', desc: '💨 Double Tap to dash through obstacles.' },
+    { id: 'astro', name: 'Astro Scholar', img: 'https://cdn-icons-png.flaticon.com/512/1983/1983220.png', desc: '🔭 Passive: Score increases 2x faster.' },
+    { id: 'hacker', name: 'Cyber Hacker', img: 'https://cdn-icons-png.flaticon.com/512/2883/2883921.png', desc: '💻 Box Power: Turns all current obstacles into coins.' },
+    { id: 'titan', name: 'Mecha Titan', img: 'https://cdn-icons-png.flaticon.com/512/1533/1533506.png', desc: '🤖 Box Power: Grow giant & smash barriers.' },
+    { id: 'goblin', name: 'Loot Goblin', img: 'https://cdn-icons-png.flaticon.com/512/1055/1055673.png', desc: '💰 Every coin picked up is worth ₹2.' },
+    { id: 'wraith', name: 'Phantom Wraith', img: 'https://cdn-icons-png.flaticon.com/512/1233/1233282.png', desc: '👻 One free auto-revive on death.' }
+];
+
+// Populate UI
+const mapGrid = document.getElementById('map-grid');
+maps.forEach((m, i) => {
+    mapGrid.innerHTML += `<div id="map-${m.id}" class="card ${i===0?'selected':''}" onclick="selectMap('${m.id}')">
+        <div class="color-box" style="background:${m.sky}; border-bottom: 4px solid ${m.lines}"></div><h3>${m.name}</h3></div>`;
+});
+const charGrid = document.getElementById('char-grid');
+characters.forEach((c, i) => {
+    charGrid.innerHTML += `<div id="char-${c.id}" class="card ${i===0?'selected':''}" onclick="selectChar('${c.id}')">
+        <img src="${c.img}"><h3>${c.name}</h3><p class="char-desc">${c.desc}</p></div>`;
+});
+
+// Engine Assets & State
 let playerImg = new Image(), obsImg = new Image(), boxImg = new Image(), coinImg = new Image(), heartImg = new Image(), killImg = new Image(), paintImg = new Image();
-
 obsImg.src = 'https://cdn-icons-png.flaticon.com/512/4601/4601679.png'; 
 boxImg.src = 'https://cdn-icons-png.flaticon.com/512/2622/2622104.png'; 
 coinImg.src = 'https://cdn-icons-png.flaticon.com/512/217/217853.png';  
@@ -108,43 +125,28 @@ heartImg.src = 'https://cdn-icons-png.flaticon.com/512/833/833472.png';
 killImg.src = 'https://cdn-icons-png.flaticon.com/512/179/179386.png';   
 paintImg.src = 'https://cdn-icons-png.flaticon.com/512/2970/2970785.png'; 
 
-canvas.width = 1000; canvas.height = 750;
-const HORIZON_Y = 180;
-const LANES = [0.2, 0.5, 0.8];
-
-// Engine Settings
 let totalRupees = parseInt(localStorage.getItem('rupees')) || 0;
-let score = 0, gameActive = false, baseSpeed = 0.009, currentSpeed = 0.009, playerType = 'king';
+let score = 0, gameActive = false, baseSpeed = 0.009, currentSpeed = 0.009;
+let playerType = 'king', currentMap = maps[0];
 let playerLane = 1, playerVisualX = 0.5, spawnTimer = 0;
 let obstacles = [], mysteryBoxes = [], coins = [], hearts = [], paintCans = [];
-let isInvincible = false, invincibleTimer = 0, rookieShields = 0;
-let paintActive = false, paintTimer = 0; 
 let health = 3;
-let flashEffect = 0, paintFlash = 0; 
-let currentMap = { sky: '#222200', lines: '#ff0', glow: 'yellow' };
+let flashEffect = 0, paintFlash = 0, isInvincible = false, invincibleTimer = 0, rookieShields = 0, paintActive = false, paintTimer = 0; 
+let giantMode = false, giantTimer = 0;
+let hasRevived = false;
 
-const URLS = {
-    king: 'https://cdn-icons-png.flaticon.com/512/3408/3408545.png',
-    rookie: 'https://cdn-icons-png.flaticon.com/512/616/616430.png',
-    chrono: 'https://cdn-icons-png.flaticon.com/512/3408/3408473.png',
-    magnet: 'https://cdn-icons-png.flaticon.com/512/1043/1043164.png'
-};
+playerImg.src = characters[0].img;
 
-playerImg.src = URLS.king;
-
-function selectMap(m) { 
-    ['yellow', 'neon', 'tokyo', 'emerald'].forEach(id => document.getElementById('map-'+id).classList.remove('selected'));
-    if(m === 'yellowCity') { currentMap = { sky: '#222200', lines: '#ff0', glow: 'yellow' }; document.getElementById('map-yellow').classList.add('selected'); }
-    if(m === 'neonNight') { currentMap = { sky: '#000022', lines: '#0ff', glow: 'cyan' }; document.getElementById('map-neon').classList.add('selected'); }
-    if(m === 'tokyoPulse') { currentMap = { sky: '#200020', lines: '#f0f', glow: '#f0f' }; document.getElementById('map-tokyo').classList.add('selected'); }
-    if(m === 'emeraldCore') { currentMap = { sky: '#001500', lines: '#0f0', glow: '#0f0' }; document.getElementById('map-emerald').classList.add('selected'); }
+function selectMap(id) { 
+    currentMap = maps.find(m => m.id === id);
+    maps.forEach(m => document.getElementById('map-'+m.id).classList.remove('selected'));
+    document.getElementById('map-'+id).classList.add('selected');
 }
-
-function selectChar(t) { 
-    playerType = t; 
-    playerImg.src = URLS[t]; 
-    ['king', 'rookie', 'chrono', 'magnet'].forEach(id => document.getElementById('card-'+id).classList.remove('selected'));
-    document.getElementById('card-' + t).classList.add('selected');
+function selectChar(id) { 
+    playerType = id; 
+    playerImg.src = characters.find(c => c.id === id).img;
+    characters.forEach(c => document.getElementById('char-'+c.id).classList.remove('selected'));
+    document.getElementById('char-'+id).classList.add('selected');
 }
 
 function startGame() {
@@ -152,10 +154,10 @@ function startGame() {
     canvas.style.display='block'; 
     document.getElementById('stats').style.display='block';
     document.getElementById('live-shop').style.display='block';
+    document.getElementById('creator-tag').style.display='block';
     
-    if(playerType === 'chrono') baseSpeed = 0.006;
-    else baseSpeed = 0.009;
-    
+    baseSpeed = (playerType === 'chrono') ? 0.006 : 0.009;
+    hasRevived = false;
     currentSpeed = baseSpeed;
     gameActive = true; 
     animate();
@@ -163,112 +165,99 @@ function startGame() {
 
 function buyBoxInGame() {
     if(totalRupees >= 200 && gameActive) {
-        totalRupees -= 200;
-        localStorage.setItem('rupees', totalRupees);
+        totalRupees -= 200; localStorage.setItem('rupees', totalRupees);
         triggerMysteryBoxReward();
-        storeHint.innerText = "ACTIVATED!";
-        setTimeout(() => { updateStoreUIState(); }, 800);
+        setTimeout(() => updateStoreUIState(), 800);
     }
 }
 
 function triggerMysteryBoxReward() {
-    if (playerType === 'king') { triggerPaintSuperpower(); } 
-    else if (playerType === 'rookie') { rookieShields = 4; } 
+    if (playerType === 'king') { paintActive = true; paintTimer = 450; health = 3; totalRupees += 100; obstacles = []; paintFlash = 15; }
+    else if (playerType === 'rookie') { rookieShields = 4; }
+    else if (playerType === 'hacker') { obstacles.forEach(o => coins.push({lane: o.lane, progress: o.progress})); obstacles = []; flashEffect = 5; }
+    else if (playerType === 'titan') { giantMode = true; giantTimer = 400; }
     else { isInvincible = true; invincibleTimer = 350; }
-}
-
-function triggerPaintSuperpower() {
-    paintActive = true;
-    paintTimer = 450; 
-    health = 3;       
-    totalRupees += 100;
-    localStorage.setItem('rupees', totalRupees);
-    obstacles = [];   
-    paintFlash = 15;  
 }
 
 function updateStoreUIState() {
     if (!gameActive) return;
-    if (totalRupees >= 200) {
-        storeBtn.disabled = false;
-        storeBtn.classList.add('can-afford');
-        storeHint.innerText = "BUY [B]";
-    } else {
-        storeBtn.disabled = true;
-        storeBtn.classList.remove('can-afford');
-        storeHint.innerText = "₹200";
-    }
+    const btn = document.getElementById('store-btn');
+    if (totalRupees >= 200) { btn.disabled = false; document.getElementById('store-hint').innerText = "BUY [B]"; } 
+    else { btn.disabled = true; document.getElementById('store-hint').innerText = "₹200"; }
 }
 
+// Controls (Added basic double tap dash logic for Ninja)
+let lastTap = 0;
 window.addEventListener('keydown', (e) => {
     if (!gameActive) return;
-    if (e.key === 'ArrowLeft' && playerLane > 0) playerLane--;
-    if (e.key === 'ArrowRight' && playerLane < 2) playerLane++;
+    if (e.key === 'ArrowLeft' && playerLane > 0) {
+        playerLane--;
+        if(playerType === 'ninja' && Date.now() - lastTap < 300) { isInvincible = true; invincibleTimer = 30; } // Quick Dash iframe
+        lastTap = Date.now();
+    }
+    if (e.key === 'ArrowRight' && playerLane < 2) {
+        playerLane++;
+        if(playerType === 'ninja' && Date.now() - lastTap < 300) { isInvincible = true; invincibleTimer = 30; } // Quick Dash iframe
+        lastTap = Date.now();
+    }
     if (e.key.toLowerCase() === 'b') buyBoxInGame();
 });
 
 function triggerGameOver(msg) {
-    gameActive = false; 
-    localStorage.setItem('rupees', totalRupees);
-    alert(msg + " \nTOTAL RUPEES: ₹" + totalRupees);
+    if(playerType === 'wraith' && !hasRevived) {
+        hasRevived = true;
+        health = 3; obstacles = []; isInvincible = true; invincibleTimer = 150;
+        alert("👻 PHANTOM REVIVAL ACTIVATED!");
+        return;
+    }
+    gameActive = false; localStorage.setItem('rupees', totalRupees);
+    alert(msg + " \nSCORE: " + Math.floor(score) + "\nTOTAL RUPEES: ₹" + totalRupees);
     location.reload(); 
 }
 
 function update() {
-    score++;
-    if (!isInvincible && !paintActive) {
-        baseSpeed += 0.000002;
-        currentSpeed = baseSpeed;
-    }
+    score += (playerType === 'astro') ? 2 : 1; // Astro gets 2x score
+    
+    if (!isInvincible && !paintActive && !giantMode) { baseSpeed += 0.000002; currentSpeed = baseSpeed; }
     playerVisualX += (LANES[playerLane] - playerVisualX) * 0.15;
 
-    if (isInvincible) {
-        invincibleTimer--;
-        if (invincibleTimer <= 0) { isInvincible = false; currentSpeed = baseSpeed; }
-    }
-    if (paintActive) {
-        paintTimer--;
-        currentSpeed = baseSpeed * 1.25; 
-        if (paintTimer <= 0) { paintActive = false; currentSpeed = baseSpeed; }
-    }
+    if (isInvincible) { invincibleTimer--; if (invincibleTimer <= 0) { isInvincible = false; currentSpeed = baseSpeed; } }
+    if (giantMode) { giantTimer--; if (giantTimer <= 0) { giantMode = false; currentSpeed = baseSpeed; } }
+    if (paintActive) { paintTimer--; currentSpeed = baseSpeed * 1.25; if (paintTimer <= 0) { paintActive = false; currentSpeed = baseSpeed; } }
+    
     if (flashEffect > 0) flashEffect--;
     if (paintFlash > 0) paintFlash--;
 
     spawnTimer++;
     if (spawnTimer % 70 === 0) {
         let emptyLane = Math.floor(Math.random() * 3);
-        if (!isInvincible && !paintActive) { 
-            for(let i = 0; i < 3; i++) {
-                if(i !== emptyLane && Math.random() > 0.45) {
-                    obstacles.push({lane: i, progress: 0, instantKill: Math.random() < 0.12});
-                }
-            }
+        if (!isInvincible && !paintActive && !giantMode) { 
+            for(let i=0; i<3; i++) { if(i !== emptyLane && Math.random() > 0.45) obstacles.push({lane: i, progress: 0, instantKill: Math.random() < 0.12}); }
         }
         if (Math.random() > 0.4) coins.push({lane: Math.floor(Math.random()*3), progress: 0});
         if (Math.random() > 0.94) mysteryBoxes.push({lane: Math.floor(Math.random()*3), progress: 0});
-        if (Math.random() > 0.97 && health < 3) hearts.push({lane: Math.floor(Math.random()*3), progress: 0});
+        if (Math.random() > 0.96 && health < 3) hearts.push({lane: Math.floor(Math.random()*3), progress: 0});
         if (playerType === 'king' && Math.random() > 0.82) paintCans.push({lane: Math.floor(Math.random()*3), progress: 0});
     }
 
-    if (playerType === 'magnet') {
-        coins.forEach(c => { if (c.progress > 0.35) c.lane = playerLane; });
-    }
+    if (playerType === 'magnet') { coins.forEach(c => { if (c.progress > 0.35) c.lane = playerLane; }); }
 
     [ {list: obstacles, id: 0}, {list: mysteryBoxes, id: 1}, {list: coins, id: 2}, {list: hearts, id: 3}, {list: paintCans, id: 4} ].forEach(group => {
         for (let i = group.list.length - 1; i >= 0; i--) {
-            let item = group.list[i];
-            item.progress += currentSpeed;
+            let item = group.list[i]; item.progress += currentSpeed;
             if (item.progress > 0.88 && item.progress < 0.98 && item.lane === playerLane) {
                 if (group.id === 0) { 
-                    if (rookieShields > 0) { rookieShields--; group.list.splice(i, 1); } 
+                    if (giantMode) { score += 50; group.list.splice(i,1); } // Titan smashes
+                    else if (rookieShields > 0) { rookieShields--; group.list.splice(i, 1); } 
                     else if (!isInvincible && !paintActive) { 
-                        if (item.instantKill) triggerGameOver("💥 DEADLY BARRIER! INSTANT GAME OVER!");
+                        if (item.instantKill) triggerGameOver("💥 DEADLY BARRIER!");
                         else { health--; flashEffect = 10; group.list.splice(i, 1); if (health <= 0) triggerGameOver("💔 OUT OF HEALTH!"); }
                     }
-                } else if (group.id === 1) { triggerMysteryBoxReward(); group.list.splice(i, 1); } 
-                else if (group.id === 2) { totalRupees += 1; group.list.splice(i, 1); } 
+                } 
+                else if (group.id === 1) { triggerMysteryBoxReward(); group.list.splice(i, 1); } 
+                else if (group.id === 2) { totalRupees += (playerType === 'goblin' ? 2 : 1); group.list.splice(i, 1); } 
                 else if (group.id === 3) { if (health < 3) health++; group.list.splice(i, 1); } 
-                else if (group.id === 4) { triggerPaintSuperpower(); group.list.splice(i, 1); }
+                else if (group.id === 4) { paintActive = true; paintTimer = 450; health = 3; totalRupees += 100; obstacles = []; paintFlash = 15; group.list.splice(i, 1); }
             }
             if (item.progress > 1.2) group.list.splice(i, 1);
         }
@@ -278,10 +267,12 @@ function update() {
     document.getElementById('score-val').innerText = Math.floor(score/10);
     document.getElementById('hp-val').innerText = "❤️".repeat(health);
     
-    if (paintActive) { document.getElementById('power-timer').innerText = `🎨 PAINT PROTECTION: ${Math.ceil(paintTimer/60)}s`; document.getElementById('power-timer').style.color = "#ff0"; } 
-    else if (isInvincible) { document.getElementById('power-timer').innerText = `⚡ BOOST RUNNING: ${Math.ceil(invincibleTimer/60)}s`; document.getElementById('power-timer').style.color = "#0ff"; } 
-    else if (rookieShields > 0) { document.getElementById('power-timer').innerText = `🛡️ SHIELDS REMAINING: ${rookieShields}`; document.getElementById('power-timer').style.color = "#0ff"; } 
-    else { document.getElementById('power-timer').innerText = ""; }
+    let pTime = document.getElementById('power-timer');
+    if (paintActive) { pTime.innerText = `🎨 HARMLESS: ${Math.ceil(paintTimer/60)}s`; pTime.style.color = "#ff0"; } 
+    else if (giantMode) { pTime.innerText = `🤖 TITAN MODE: ${Math.ceil(giantTimer/60)}s`; pTime.style.color = "#f00"; }
+    else if (isInvincible) { pTime.innerText = `⚡ BOOST: ${Math.ceil(invincibleTimer/60)}s`; pTime.style.color = "#0ff"; } 
+    else if (rookieShields > 0) { pTime.innerText = `🛡️ SHIELDS: ${rookieShields}`; pTime.style.color = "#0ff"; } 
+    else { pTime.innerText = ""; }
     updateStoreUIState(); 
 }
 
@@ -289,29 +280,32 @@ function draw() {
     ctx.fillStyle = currentMap.sky; ctx.fillRect(0,0,1000,750);
     ctx.fillStyle = '#111'; ctx.beginPath(); ctx.moveTo(420, HORIZON_Y); ctx.lineTo(580, HORIZON_Y); ctx.lineTo(1300, 750); ctx.lineTo(-300, 750); ctx.fill();
 
-    ctx.setLineDash([20,30]); ctx.strokeStyle = currentMap.lines; ctx.lineWidth = 10; ctx.shadowBlur = 15; ctx.shadowColor = currentMap.glow;
+    ctx.setLineDash(currentMap.id === 'glitch' ? [5,10,30,5] : [20,30]); 
+    ctx.strokeStyle = currentMap.lines; ctx.lineWidth = 10; ctx.shadowBlur = 15; ctx.shadowColor = currentMap.glow;
     [0.0, 0.33, 0.66, 1.0].forEach(l => { ctx.beginPath(); ctx.moveTo(500 + (l-0.5)*160, HORIZON_Y); ctx.lineTo(500 + (l-0.5)*1600, 750); ctx.stroke(); });
     ctx.setLineDash([]); ctx.shadowBlur = 0;
 
-    coins.forEach(c => { let s = 65 * c.progress; ctx.drawImage(coinImg, (500 + (LANES[c.lane]-0.5) * (160 + c.progress * 1440))-s/2, (HORIZON_Y + c.progress * 570)-s, s, s); });
-    mysteryBoxes.forEach(b => { let s = 140 * b.progress; ctx.drawImage(boxImg, (500 + (LANES[b.lane]-0.5) * (160 + b.progress * 1440))-s/2, (HORIZON_Y + b.progress * 570)-s, s, s); });
-    hearts.forEach(h => { let s = 75 * h.progress; ctx.drawImage(heartImg, (500 + (LANES[h.lane]-0.5) * (160 + h.progress * 1440))-s/2, (HORIZON_Y + h.progress * 570)-s, s, s); });
-    
-    paintCans.forEach(p => { 
-        let s = 100 * p.progress; ctx.shadowBlur = 20; ctx.shadowColor = "#ff0";
-        ctx.drawImage(paintImg, (500 + (LANES[p.lane]-0.5) * (160 + p.progress * 1440))-s/2, (HORIZON_Y + p.progress * 570)-s, s, s); ctx.shadowBlur = 0; 
-    });
+    let drawItem = (img, lane, prog, sizeBase) => {
+        let s = sizeBase * prog; 
+        ctx.drawImage(img, (500 + (LANES[lane]-0.5) * (160 + prog * 1440))-s/2, (HORIZON_Y + prog * 570)-s, s, s);
+    };
+
+    coins.forEach(c => drawItem(coinImg, c.lane, c.progress, 65));
+    mysteryBoxes.forEach(b => drawItem(boxImg, b.lane, b.progress, 140));
+    hearts.forEach(h => drawItem(heartImg, h.lane, h.progress, 75));
+    paintCans.forEach(p => { ctx.shadowBlur = 20; ctx.shadowColor = "#ff0"; drawItem(paintImg, p.lane, p.progress, 100); ctx.shadowBlur = 0; });
     
     obstacles.forEach(o => {
-        let s = 250 * o.progress; let x = 500 + (LANES[o.lane]-0.5) * (160 + o.progress * 1600); let y = HORIZON_Y + o.progress * 570;
-        if (o.instantKill) { ctx.shadowBlur = 35; ctx.shadowColor = "#ff0000"; ctx.drawImage(killImg, x-s/2, y-s, s, s); ctx.shadowBlur = 0; } 
-        else { ctx.drawImage(obsImg, x-s/2, y-s, s, s); }
+        if (o.instantKill) { ctx.shadowBlur = 35; ctx.shadowColor = "#ff0000"; drawItem(killImg, o.lane, o.progress, 250); ctx.shadowBlur = 0; } 
+        else { drawItem(obsImg, o.lane, o.progress, 250); }
     });
 
-    let pSize = 230; let pX = 500 + (playerVisualX - 0.5) * 1100; let pY = 705;
-    if (isInvincible) { ctx.shadowBlur = 45; ctx.shadowColor = "cyan"; }
+    let pSize = giantMode ? 380 : 230; 
+    let pX = 500 + (playerVisualX - 0.5) * 1100; let pY = 705;
+    
+    if (isInvincible || giantMode) { ctx.shadowBlur = 45; ctx.shadowColor = giantMode ? "red" : "cyan"; }
     if (paintActive) { ctx.shadowBlur = 50; ctx.shadowColor = "yellow"; }
-    if (rookieShields > 0) { ctx.strokeStyle = "#0ff"; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(pX, pY - (pSize/2), 125, 0, Math.PI*2); ctx.stroke(); }
+    if (rookieShields > 0) { ctx.strokeStyle = "#0ff"; ctx.lineWidth = 6; ctx.beginPath(); ctx.arc(pX, pY - (230/2), 125, 0, Math.PI*2); ctx.stroke(); }
     
     ctx.drawImage(playerImg, pX - pSize/2, pY - pSize, pSize, pSize); ctx.shadowBlur = 0;
 
